@@ -1,0 +1,85 @@
+body {
+  background-color: white;
+}
+
+.title {
+  text-align: center;
+  color: crimson;
+}
+
+.center_align {
+  text-align: center;
+}
+
+.info-container {
+  border: 2px solid blue;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 2vh;
+  min-height: 30vh;
+}
+
+.select-graph {
+  margin-top: 2vh;
+}
+
+#graph-selector {
+  border: 2px solid blue;
+  border-radius: 5px;
+  padding: 10px;
+  min-height: 50vh;
+}
+
+#graph-selector > ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+#graph-selector button {
+  border: 1px solid blue;
+  border-radius: 3px;
+  margin-top: 1vh;
+  width: 100%;
+  height: 4vh;
+  text-align: center;
+  background-color: white;
+}
+
+#graph-container {
+  border: 2px solid blue;
+  border-radius: 5px;
+  padding: 10px;
+  min-height: 50vh;
+}
+
+#settings {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  height: 32px;
+  width: 32px;
+}
+
+#settings:hover {
+  cursor: pointer;
+}
+
+.modal-content {
+  border: 1px solid blue;
+}
+
+.modal-dialog {
+  top: 25%;
+}
+
+input {
+  width: 75%;
+}
+
+.modal button {
+  border: 1px solid blue;
+  border-radius: 3px;
+  text-align: center;
+  background-color: white;
+}
