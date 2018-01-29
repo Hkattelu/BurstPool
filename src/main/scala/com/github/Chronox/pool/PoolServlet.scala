@@ -5,7 +5,7 @@ import org.scalatra._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class PoolServlet() extends ScalatraServlet {
+class PoolServlet(system: ActorSystem) extends ScalatraServlet {
 
   get("/") {
     views.html.dashboard.render()
