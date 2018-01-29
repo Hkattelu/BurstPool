@@ -6,7 +6,7 @@ import javax.servlet.ServletContext
 class ScalatraBootstrap extends LifeCycle {
 
   val system = ActorSystem()
-  val myActor = system.actorOf(Props[Myself])
+  val burstChecker = system.actorOf(Props[BURSTChecker])
 
   override def init(context: ServletContext) {
     context.mount(new PoolServlet(system), "/*") 
