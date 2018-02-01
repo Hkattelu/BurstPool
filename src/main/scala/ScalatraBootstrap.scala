@@ -10,5 +10,6 @@ class ScalatraBootstrap extends LifeCycle {
 
   override def init(context: ServletContext) {
     context.mount(new PoolServlet(system), "/*") 
+    context.mount(new BurstPriceServlet(system, burstChecker), "/updateBurstPrice")
   }
 }
