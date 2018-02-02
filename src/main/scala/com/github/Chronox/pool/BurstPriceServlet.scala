@@ -10,8 +10,7 @@ import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._
 
-class BurstPriceServlet(system: ActorSystem, burstChecker: ActorRef)
-extends ScalatraServlet with JacksonJsonSupport {
+class BurstPriceServlet extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats.withBigDecimal
   protected implicit val timeout: Timeout = 5 seconds
@@ -21,6 +20,6 @@ extends ScalatraServlet with JacksonJsonSupport {
   }
 
   get("/") {
-    burstChecker ? getBurstPriceInfo()
+    Global.burstChecker ? getBurstPriceInfo()
   }
 }

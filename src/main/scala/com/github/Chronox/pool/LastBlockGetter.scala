@@ -8,11 +8,9 @@ import akka.util.ByteString
 import scala.concurrent.duration._
 import net.liftweb.json._
 
-case class updateBurstPriceInfo()
-case class getBurstPriceInfo()
-case class BurstPriceInfo(price_usd: String, price_btc: String)
+case class getNewBlock()
 
-class BURSTChecker extends Actor with ActorLogging {
+class LastBlockGetter extends Actor with ActorLogging {
 
   import akka.pattern.pipe
   import context.dispatcher
@@ -22,27 +20,21 @@ class BURSTChecker extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
-  val coinIndexAPIkey = "xlFeLy6SMAC3kg42aUz84cAVNCAWAR"
-
-  var BurstInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
+  val poolURI = "http://pool.burstcoin.space:8124/burst?requestType=getMiningInfo"
+  var lastBlock = "Dummy"
 
   def receive() = {
-    case updateBurstPriceInfo() => {
-      http.singleRequest(HttpRequest(
-        uri = "https://api.coinmarketcap.com/v1/ticker/burst/")).pipeTo(self)
-    }
-    case getBurstPriceInfo() => {
-      sender() ! BurstInfo
+    case getNewBlock() => {
+      http.singleRequest(HttpRequest(uri = poolURI)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          BurstInfo = parse(body.utf8String).extract[BurstPriceInfo]  
+          log.info(body.utf8String)
         }
       } 
-    case resp @ HttpResponse(code, _, _, _) => {
+    case resp @ HttpResponse(code, _, _, _) =>
       log.info("Request failed, response code: " + code)
       resp.discardEntityBytes()
-    }
   }
 }

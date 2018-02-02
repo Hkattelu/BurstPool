@@ -6,11 +6,13 @@ import javax.servlet.ServletContext
 class ScalatraBootstrap extends LifeCycle {
 
   val system = ActorSystem()
-  val burstChecker = system.actorOf(Props[BURSTChecker])
+  Global.stateUpdater = system.actorOf(Props[StateUpdater])
+  Global.burstChecker = system.actorOf(Props[BURSTChecker])
+  Global.lastBlockGetter = system.actorOf(Props[LastBlockGetter])
 
   override def init(context: ServletContext) {
-    context.mount(new PoolServlet(system), "/*") 
-    context.mount(new BurstPriceServlet(system, burstChecker), "/updateBurstPrice")
+    context.mount(new PoolServlet(), "/*")
+    context.mount(new BurstPriceServlet(), "/updateBurstPrice")
   }
 
   override def destroy(context: ServletContext) {
