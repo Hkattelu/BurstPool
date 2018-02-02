@@ -12,4 +12,8 @@ class ScalatraBootstrap extends LifeCycle {
     context.mount(new PoolServlet(system), "/*") 
     context.mount(new BurstPriceServlet(system, burstChecker), "/updateBurstPrice")
   }
+
+  override def destroy(context: ServletContext) {
+    system.terminate()
+  }
 }

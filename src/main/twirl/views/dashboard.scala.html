@@ -6,11 +6,10 @@
   <script src="http://getbootstrap.com/dist/js/bootstrap.js"></script>
 
   <link rel="stylesheet" href="stylesheets/dashboard.css">
-  <script src="scripts/dashboard.js"></script>
 }{
   <div class="row">
     <div class="col-xs-12">
-      <h1 class="title">@@Chronox BURSTCoin mining pool</h1>
+      <h1 class="title">Memedream mining pool</h1>
     </div>
   </div>
   <div class="main-panels row">
@@ -28,20 +27,17 @@
     <div class="col-md-2 col-sm-4 col-xs-12">
       <div class="info-container" id="graph-selector">
         <ul>
-          <li><button>Reported Pool Memory</button></li>
-          <li><button>Pool BURST earned</button></li>
-          <li><button>Pool Active users</button></li>
-          <li><button>Daily BURST earned</button></li>
-          <li><button>Weekly BURST earned</button></li>
-          <li><button>Daily BURST price</button></li>
-          <li><button>Weekly BURST price</button></li>
+          <li><a href="#/!">BURST price</a></li>
+          <li><a href="#!burstEarned">BURST earned</a></li>
+          <li><a href="#!poolUsers">Pool Active users</a></li>
+          <li><a href="#!poolMemory">Reported Pool Memory</a></li>
+          <li><a href="#!poolEarned">Pool BURST earned</a></li>
         </ul>
       </div>
     </div>
     <div class="col-md-10 col-sm-8 col-xs-12">
       <div class="info-container" id="graph-container">
-        <script type="text/javascript" src="https://files.coinmarketcap.com/static/widget/currency.js"></script>
-        <div class="coinmarketcap-currency-widget" data-currency="burst" data-base="USD"  data-secondary="BTC"></div>
+        <div ng-view></div>
       </div>
     </div>  
   </div>
@@ -88,4 +84,6 @@
       </div>
     </div>
   </div>
+  <script src="scripts/modal.js"></script>
+  <script src="scripts/routes.js"></script>
 } 
