@@ -20,7 +20,7 @@ class DeadlineCheckerServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   get("/"){
-    if(params("requestType") == "submitNonce"){
+    if(params("requestType") == "getMiningInfo"){
 
     }
   }

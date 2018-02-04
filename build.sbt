@@ -23,7 +23,10 @@ libraryDependencies ++= Seq(
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
   "net.liftweb" %% "lift-json" % "3.2.0-M3",
   "org.scalatra" %% "scalatra-json" % ScalatraVersion,
-  "org.json4s"   %% "json4s-jackson" % "3.6.0-M2"
+  "org.json4s"   %% "json4s-jackson" % "3.6.0-M2",
+  "org.squeryl" %% "squeryl" % "0.9.5-7",
+  "com.h2database" % "h2" % "1.3.166",
+  "c3p0" % "c3p0" % "0.9.1.2"
 )
 
 enablePlugins(SbtTwirl)
