@@ -1,6 +1,6 @@
 package com.github.Chronox.pool
 
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import akka.actor.{ Actor, ActorLogging }
 import akka.pattern.ask
 import akka.util.Timeout
 import org.scalatra._
@@ -14,7 +14,8 @@ case class submitBlock()
 
 class DeadlineSubmitter extends Actor with ActorLogging {
 
-  protected implicit lazy val jsonFormats: Formats = DefaultFormats.withBigDecimal
+  protected implicit lazy val jsonFormats: Formats = 
+    DefaultFormats.withBigDecimal
   protected implicit val timeout: Timeout = 5 seconds
 
   def receive() = {

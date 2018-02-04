@@ -12,7 +12,8 @@ import org.scalatra.json._
 
 class DeadlineCheckerServlet extends ScalatraServlet with JacksonJsonSupport {
 
-  protected implicit lazy val jsonFormats: Formats = DefaultFormats.withBigDecimal
+  protected implicit lazy val jsonFormats: Formats =
+   DefaultFormats.withBigDecimal
   protected implicit val timeout: Timeout = 5 seconds
 
   before() {

@@ -20,7 +20,8 @@ class LastBlockGetter extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
-  val poolURI = "http://pool.burstcoin.space:8124/burst?requestType=getMiningInfo"
+  val poolURI = 
+    "http://pool.burstcoin.space:8124/burst?requestType=getMiningInfo"
   var lastBlock = "Dummy"
 
   def receive() = {

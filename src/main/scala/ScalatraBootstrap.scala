@@ -13,7 +13,7 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
   override def init(context: ServletContext) {
     configureDb()
     context.mount(new PoolServlet(), "/*")
-    context.mount(new BurstPriceServlet(), "/updateBurstPrice")
+    context.mount(new BurstPriceServlet(), "/getBurstPrice")
     context.mount(new DeadlineCheckerServlet(), "/burst")
     context.mount(new MiningInfoServlet(), "/burst")
   }
