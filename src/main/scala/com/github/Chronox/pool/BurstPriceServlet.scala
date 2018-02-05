@@ -20,6 +20,6 @@ class BurstPriceServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   get("/") {
-    Global.burstChecker ? getBurstPriceInfo()
+    Global.burstInfo
   }
 }

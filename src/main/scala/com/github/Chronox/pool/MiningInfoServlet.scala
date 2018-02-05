@@ -22,7 +22,7 @@ class MiningInfoServlet extends ScalatraServlet with JacksonJsonSupport {
 
   get("/"){
     if(params("requestType") == "getMiningInfo"){
-
+      Global.currentBlock
     }
   }
 }

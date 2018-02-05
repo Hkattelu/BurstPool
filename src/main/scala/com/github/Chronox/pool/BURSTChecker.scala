@@ -9,7 +9,6 @@ import scala.concurrent.duration._
 import net.liftweb.json._
 
 case class updateBurstPriceInfo()
-case class getBurstPriceInfo()
 case class BurstPriceInfo(price_usd: String, price_btc: String)
 
 class BURSTChecker extends Actor with ActorLogging {
@@ -24,20 +23,15 @@ class BURSTChecker extends Actor with ActorLogging {
   val http = Http(context.system)
   val coinIndexAPIkey = "xlFeLy6SMAC3kg42aUz84cAVNCAWAR"
 
-  var BurstInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
-
   def receive() = {
     case updateBurstPriceInfo() => {
       http.singleRequest(HttpRequest(
         uri = "https://api.coinmarketcap.com/v1/ticker/burst/")).pipeTo(self)
     }
-    case getBurstPriceInfo() => {
-      sender() ! BurstInfo
-    }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          BurstInfo = parse(body.utf8String).extract[BurstPriceInfo]  
+          Global.burstInfo = parse(body.utf8String).extract[BurstPriceInfo]  
         }
       } 
     case resp @ HttpResponse(code, _, _, _) => {

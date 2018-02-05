@@ -11,6 +11,6 @@ class User {
   var pendingBURST: Integer = null
   var payedBURST: Integer = null
   var lastSubmitTime: LocalDate = null
-  var isBanned: Boolean = null
+  var isBanned: Boolean = false
   var banTime: LocalDate = null
 }
