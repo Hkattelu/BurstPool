@@ -21,11 +21,15 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   get("/"){
-    val requestType = params("requestType")
-    if(requestType == "submitNonce"){
-      print(request.toString())
-    } else if(requestType == "getMiningInfo"){
-      Global.miningInfo
+    try {
+      val requestType = params("requestType")
+      requestType match {
+        case "submitNonce" => print(request.toString())
+        case "getMiningInfo" => Global.miningInfo
+      }
+    } catch {
+      case e: NoSuchElementException => "Online"
     }
+
   }
 }
