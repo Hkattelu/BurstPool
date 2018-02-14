@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 import net.liftweb.json._
 
 case class updateBurstPriceInfo()
-case class BurstPriceInfo(price_usd: String, price_btc: String)
+case class BurstPriceInfo(price_usd:String, price_btc:String)
 
 class BURSTChecker extends Actor with ActorLogging {
 

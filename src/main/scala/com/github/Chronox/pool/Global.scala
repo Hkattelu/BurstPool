@@ -10,7 +10,8 @@ object Global {
   var lastBlockGetter: ActorRef = null
   var deadlineChecker: ActorRef = null
   var deadlineSubmitter: ActorRef = null
+  var userManager: ActorRef = null
 
-  var currentBlock: Block = null
+  var miningInfo: MiningInfo = MiningInfo(null, null, null, null)
   var burstInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 }

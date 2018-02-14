@@ -20,7 +20,7 @@ class StateUpdater extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   override def preStart() {
-    context.system.scheduler.schedule(0 seconds, 5 seconds, self, StateTick())
+    context.system.scheduler.schedule(0 seconds, 10 seconds, self, StateTick())
   }
 
   def receive() = {

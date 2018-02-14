@@ -10,7 +10,7 @@ import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
 
-class MiningInfoServlet extends ScalatraServlet with JacksonJsonSupport {
+class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats =
    DefaultFormats.withBigDecimal
@@ -21,8 +21,11 @@ class MiningInfoServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   get("/"){
-    if(params("requestType") == "getMiningInfo"){
-      Global.currentBlock
+    val requestType = params("requestType")
+    if(requestType == "submitNonce"){
+      print(request.toString())
+    } else if(requestType == "getMiningInfo"){
+      Global.miningInfo
     }
   }
 }

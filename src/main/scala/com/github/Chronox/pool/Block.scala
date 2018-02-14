@@ -3,6 +3,7 @@ package com.github.Chronox.pool
 import java.time.LocalDate
 
 class Block (
+  var rewardId: Long,
   var height: Long,
   var deadline: Long,
   var difficulty: Long,
@@ -10,9 +11,8 @@ class Block (
   var generator: String,
   var generationSig: String,
   var blockSig: String,
-  var rewardAssignment: String
-  var timeSubmitted: LocalDate,
-  var rewardId: Long
+  var rewardAssignment: String,
+  var timeSubmitted: LocalDate
   ) {
-  def this() = this(0, 0, 0, 0, null, null, null, null)
+  def this() = this(0, 0, 0, 0, 0, null, null, null, null, null)
 }

@@ -9,4 +9,7 @@ import java.sql.Timestamp
 object PoolSchema extends Schema {
   val users = table[User]
   val blocks = table[Block] 
+  val rewards = table[Reward]
+  val shares = table[Share]
+  val pool = table[Pool]
 }

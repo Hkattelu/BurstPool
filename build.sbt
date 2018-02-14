@@ -16,8 +16,8 @@ resolvers += Classpaths.typesafeReleases
 libraryDependencies ++= Seq(
   "org.scalatra" %% "scalatra" % ScalatraVersion,
   "org.scalatra" %% "scalatra-scalatest" % ScalatraVersion % "test",
-  "com.typesafe.akka" %% "akka-http"   % "10.1.0-RC1", 
-  "com.typesafe.akka" %% "akka-stream" % "2.5.8",
+  "com.typesafe.akka" %% "akka-http"   % "10.0.11", 
+  "com.typesafe.akka" %% "akka-stream" % "2.5.9",
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "runtime",
   "org.eclipse.jetty" % "jetty-webapp" % "9.4.8.v20171121" % "container",
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",

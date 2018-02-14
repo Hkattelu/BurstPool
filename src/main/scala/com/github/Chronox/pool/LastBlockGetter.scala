@@ -9,6 +9,8 @@ import scala.concurrent.duration._
 import net.liftweb.json._
 
 case class getNewBlock()
+case class MiningInfo(generationSignature:String,
+  baseTarget:String, height:String, targetDeadline:String)
 
 class LastBlockGetter extends Actor with ActorLogging {
 
@@ -22,7 +24,6 @@ class LastBlockGetter extends Actor with ActorLogging {
   val http = Http(context.system)
   val poolURI = 
     "http://pool.burstcoin.space:8124/burst?requestType=getMiningInfo"
-  var lastBlock = "Dummy"
 
   def receive() = {
     case getNewBlock() => {
@@ -32,6 +33,7 @@ class LastBlockGetter extends Actor with ActorLogging {
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
           log.info(body.utf8String)
+          Global.miningInfo = parse(body.utf8String).extract[MiningInfo]
         }
       } 
     case resp @ HttpResponse(code, _, _, _) =>
