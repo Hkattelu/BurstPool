@@ -1,12 +1,18 @@
 package com.github.Chronox.pool
 
-class Block {
-  var height: Long = 0
-  var deadline: Long = 0
-  var difficulty: Long = 0
-  var baseTarget: Long = 0
-  var generator: String = null
-  var generationSig: String = null
-  var blockSig: String = null
-  var rewardAssignment: String = null
+import java.time.LocalDate
+
+class Block (
+  var height: Long,
+  var deadline: Long,
+  var difficulty: Long,
+  var baseTarget: Long,
+  var generator: String,
+  var generationSig: String,
+  var blockSig: String,
+  var rewardAssignment: String
+  var timeSubmitted: LocalDate,
+  var rewardId: Long
+  ) {
+  def this() = this(0, 0, 0, 0, null, null, null, null)
 }

@@ -26,7 +26,6 @@ class UserManager extends Actor with ActorLogging {
   def receive() = {
     case banUser(ip_address: String) => {}
     case addUser(ip_address: String, name: String) => {
-      
     }
     case refreshUsers() => {}
   }
