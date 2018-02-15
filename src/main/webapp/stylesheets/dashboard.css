@@ -17,6 +17,7 @@ body {
   padding: 10px;
   margin-bottom: 2vh;
   min-height: 30vh;
+  text-align: center;
 }
 
 table, th, td {

@@ -4,7 +4,7 @@
 }{
   <div class="row">
     <div class="col-xs-12">
-      <h1 class="title">Memedream mining pool</h1>
+      <h1 class="title">Burstcoin mining pool</h1>
     </div>
   </div>
   <div class="main-panels row">
@@ -63,37 +63,50 @@
       </div>
     </div>  
   </div>
-  <img src="images/settings.png" alt="Settings" onclick="openSettings()" id="settings"/>
+  <img src="images/settings.png" alt="Settings"
+    onclick="openSettings()" id="settings"/>
   <div class="modal" id="settings-modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-body">
           <h3> Pool Information </h3>
           <ul>
-            <li>Miners should submit nonces to port 8124. This pool also supports the
-             getMiningInfo API call on the same port.</li>
-            <li>To mine here you need to set your "reward recipient" to
-             BURST-SPAC-EWWF-CRX2-78Z6Z. This costs 1 BURST and you need to wait 4
-              blocks before it takes effect</li>
-            <li>Transaction fees are included in the rewards shared to miners. When the
-             pool wins a block, 2% is deducted from the block reward for pool usage 
-             fees. Of the remaining reward, 60% is shared over miners who submitted 
-             nonces for the current block. For the current block, a miner's share of the 
-             (60%) reward is inversely proportional to (deadline + 1)1.2. The other 40% 
-             is shared over miners who submitted nonces for the previous 500 blocks. 
-             These "historic" shares are simply the average of "current" shares over the 
-             previous 500 blocks.</li>
-            <li>Miner payouts are calculated after a minimum of 10 blocks after the pool 
-              wins that block. Miner payouts are Deferred until their total pending 
-              payout is at least 250 BURST, or the earliest pending payout is over 2520 
-              blocks old. Queued payouts are waiting to be sent to the BURST network. 
-              Unconfirmed payouts have been sent to the BURST network but haven't had 10 
-              confirmations yet. Confirmed payouts are listed as Paid. If there are no 
-              unconfirmed payouts, and no blocks won by the pool which haven't been 
-              shared out yet, then the balance, minus deferred payouts, is swept into 
-              the pool's fee account.</li>
+            <li>
+              Miners should submit nonces to port 8124. This pool also
+              supports the getMiningInfo API call on the same port.
+            </li>
+            <li>
+              To mine here you need to set your "reward recipient" to
+              BURST-SPAC-EWWF-CRX2-78Z6Z. This costs 1 BURST and you need to 
+              wait 4 blocks before it takes effect
+            </li>
+            <li>
+              Transaction fees are included in the rewards shared to miners.
+              When the pool wins a block, 2% is deducted from the block reward 
+              for pool usage fees. Of the remaining reward, 60% is shared over
+              miners who submitted nonces for the current block. For the 
+              current block,a miner's share of the (60%) reward is inversely
+              proportional to (deadline + 1)1.2. The other 40% is shared over
+              miners who submitted nonces for the previous 500 blocks. These
+              "historic" shares are simply the average of "current" shares over
+              the previous 500 blocks.
+            </li>
+            <li>
+              Miner payouts are calculated after a minimum of 10 blocks after 
+              the pool wins that block. Miner payouts are Deferred until their
+              total pending payout is at least 250 BURST, or the earliest
+              pending payout is over 2520 blocks old. Queued payouts are waiting
+              to be sent to the BURST network. Unconfirmed payouts have been
+              sent to the BURST network but haven't had 10 confirmations yet.
+              Confirmed payouts are listed as Paid. If there are no unconfirmed
+              payouts, and no blocks won by the pool which haven't been shared
+              out yet, then the balance, minus deferred payouts, is swept into
+              the pool's fee account.
+            </li>
           </ul>
-          <h4 class="center_align">Enter your BURST nickname/address to view information</h4>
+          <h4 class="center_align">
+            Enter your BURST nickname/address to view information
+          </h4>
           <div class="center_align">
             <form novalidate>
               <input type="text" placeholder="BURST address/nickname"/>

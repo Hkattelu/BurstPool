@@ -8,8 +8,9 @@ import akka.util.ByteString
 import scala.concurrent.duration._
 import net.liftweb.json._
 
+case class addUser(ip_address: String, accountId:String)
+case class containsUser(ip_address: String)
 case class banUser(ip_address: String)
-case class addUser(ip_address: String, name: String)
 case class refreshUsers()
 
 class UserManager extends Actor with ActorLogging {
@@ -25,7 +26,10 @@ class UserManager extends Actor with ActorLogging {
 
   def receive() = {
     case banUser(ip_address: String) => {}
-    case addUser(ip_address: String, name: String) => {
+    case addUser(ip_address: String, accountId: String) => {
+      newUser = new User()
+      newUser.id = accountId
+      activeUsers += newUser
     }
     case refreshUsers() => {}
   }

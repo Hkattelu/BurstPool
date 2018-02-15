@@ -21,14 +21,38 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   get("/"){
+
     try {
       val requestType = params("requestType")
       requestType match {
-        case "submitNonce" => println(request.toString())
+        case "submitNonce" => {
+          try {
+            params("nonce")
+            params("accountId")
+
+            // verify nonce validitiy
+
+            // if it is invalid, ban the IP temporarily
+
+            // check if user is already in pool
+            // if so, update the last submit time
+
+            // if not, add a new user
+
+            // check if this is the best deadline so far
+
+            // if it is, submit it to a main node
+
+            // otherwise, record it and change the current reward shares
+          } catch {
+            case e: NoSuchElementException => "No account ID or nonce provided"
+          }
+          println(request.toString())
+        }
         case "getMiningInfo" => Global.miningInfo
       }
     } catch {
-      case e: NoSuchElementException => "Online"
+      case e: NoSuchElementException => "Invalid request type"
     }
 
   }

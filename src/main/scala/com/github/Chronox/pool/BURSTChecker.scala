@@ -21,12 +21,12 @@ class BURSTChecker extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
+  val priceURI = "https://api.coinmarketcap.com/v1/ticker/burst/"
   val coinIndexAPIkey = "xlFeLy6SMAC3kg42aUz84cAVNCAWAR"
 
   def receive() = {
     case updateBurstPriceInfo() => {
-      http.singleRequest(HttpRequest(
-        uri = "https://api.coinmarketcap.com/v1/ticker/burst/")).pipeTo(self)
+      http.singleRequest(HttpRequest(uri = priceURI)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
