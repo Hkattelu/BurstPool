@@ -1,10 +1,5 @@
 @()
 @layouts.html.main("Burstcoin mining pool"){
-  <script src="http://code.jquery.com/jquery-2.0.3.min.js" data-semver="2.0.3" data-require="jquery"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
-  <script src="http://getbootstrap.com/dist/js/bootstrap.js"></script>
-
   <link rel="stylesheet" href="stylesheets/dashboard.css">
 }{
   <div class="row">
@@ -17,7 +12,36 @@
       <div class="info-container">Current Block Shares</div>
     </div>
     <div class="col-md-4 col-sm-4 col-xs-12">
-      <div class="info-container">Payout Information</div>
+      <div class="info-container">
+        <table>
+          <tr>
+            <th></th>
+            <th>Pending Payment</th>
+            <th>Earned Payment</th>
+          </tr>
+          <tr>
+            <td><img src="images/burstcoin.png" alt="BURST"/></td>
+            <td id="pending-BURST"></td>
+            <td id="earned-BURST"></td>
+          </tr>
+          <tr>
+            <td><img src="images/dollar.png" alt="USD"/></td>
+            <td id="pending-USD"></td>
+            <td id="earned-USD"></td>
+          </tr>
+          <tr>
+            <td><img src="images/bitcoin.png" alt="BTC"/></td>
+            <td id="pending-BTC"></td>
+            <td id="earned-BTC"></td>
+          </tr>
+        </table>
+        <br>
+        <span>1 <img src="images/burstcoin.png" alt="BURST"/>
+         = $2 <img src="images/dollar.png" alt="USD"/></span>
+        <br>
+        <span>1 <img src="images/burstcoin.png" alt="BURST"/>
+         = 2 <img src="images/bitcoin.png" alt="BTC"/></span>
+      </div>
     </div>
     <div class="col-md-4 col-sm-4 col-xs-12">
       <div class="info-container">Historic Block Shares</div>
@@ -27,9 +51,8 @@
     <div class="col-md-2 col-sm-4 col-xs-12">
       <div class="info-container" id="graph-selector">
         <ul>
-          <li><a href="#!">BURST price</a></li>
+          <li><a href="#!">Pool Active users</a></li>
           <li><a href="#!burstEarned">BURST earned</a></li>
-          <li><a href="#!poolUsers">Pool Active users</a></li>
           <li><a href="#!poolMemory">Reported Pool Memory</a></li>
           <li><a href="#!poolEarned">Pool BURST earned</a></li>
         </ul>
@@ -84,4 +107,5 @@
   </div>
   <script src="scripts/modal.js"></script>
   <script src="scripts/routes.js"></script>
+  <script src="scripts/burstPrice.js"></script>
 } 

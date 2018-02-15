@@ -19,6 +19,12 @@ body {
   min-height: 30vh;
 }
 
+table, th, td {
+  text-align: center;
+  padding: 3px;
+  border: 1px solid blue;
+}
+
 .select-graph {
   margin-top: 2vh;
 }

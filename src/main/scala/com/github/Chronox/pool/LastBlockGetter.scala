@@ -32,7 +32,6 @@ class LastBlockGetter extends Actor with ActorLogging {
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          log.info(body.utf8String)
           Global.miningInfo = parse(body.utf8String).extract[MiningInfo]
         }
       } 
