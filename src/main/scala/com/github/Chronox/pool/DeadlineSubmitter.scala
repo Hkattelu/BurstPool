@@ -24,11 +24,11 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     case submitNonce(accountId: String, nonce: String) => {}
   }
 
-  def calculateDeadline(accountId: String, nonce: String): Long {
-    return 0L
+  def calculateDeadline(accountId: String, nonce: String): Long  = {
+    0L
   }
 
-  def checkValidDeadline(deadline: Long): Boolean {
-    return false
+  def checkValidDeadline(deadline: Long): Boolean = {
+    false
   }
 }

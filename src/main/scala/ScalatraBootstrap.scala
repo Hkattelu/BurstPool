@@ -12,6 +12,7 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
   Global.userManager = system.actorOf(Props[UserManager])
   
   override def init(context: ServletContext) {
+    if(!Config.init()) return
     configureDb()
     context.mount(new PoolServlet(), "/*")
     context.mount(new BurstPriceServlet(), "/getBurstPrice")

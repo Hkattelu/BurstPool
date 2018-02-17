@@ -7,6 +7,7 @@ import javax.servlet.ServletContext
 
 class PoolServletTests extends ScalatraSuite with FunSuiteLike{
 
+  Config.init()
   val system = ActorSystem()
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
   Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])

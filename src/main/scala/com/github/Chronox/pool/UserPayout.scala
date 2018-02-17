@@ -17,5 +17,6 @@ class UserPayout extends Actor with ActorLogging {
   protected implicit val timeout: Timeout = 5 seconds
 
   def receive() = {
+    case StateTick() => {}
   }
 }
