@@ -24,9 +24,9 @@ class UserManager extends Actor with ActorLogging {
 
   var activeUsers = scala.collection.mutable.Map[String, User]()
 
-  def receive() = {
+  def receive(): Boolean = {
     case banUser(ip_address: String) => {}
-    case containsUser(ip_address: String) => {}
+    case containsUser(ip_address: String) => {true}
     case addUser(ip_address: String, accountId: String) => {}
     case refreshUsers() => {}
   }

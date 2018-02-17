@@ -8,7 +8,6 @@ object Global {
   var stateUpdater: ActorRef = null
   var burstPriceChecker: ActorRef = null
   var lastBlockGetter: ActorRef = null
-  var deadlineChecker: ActorRef = null
   var deadlineSubmitter: ActorRef = null
   var userManager: ActorRef = null
 

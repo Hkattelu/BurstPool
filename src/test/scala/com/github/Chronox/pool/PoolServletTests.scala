@@ -46,18 +46,29 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     }
   }
 
+  test("Getting pool statistics"){
+
+  }
+
   test("Submitting a bad nonce"){
     get("/burst", Map("requestType" -> "submitNonce")){
       status should equal (200)
     }
   }
 
-  test("Submitting a valid nonce"){
+  test("Submitting a valid but not best nonce"){
     get("/burst", Map("requestType" -> "submitNonce")){
       status should equal (200)
     }
   }
 
+  test("Overwriting previous best nonce"){
+
+  }
+
+  test("100 user stress test"){
+
+  }
 
   override def afterAll() {
     system.terminate()

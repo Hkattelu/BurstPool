@@ -11,6 +11,7 @@ import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
 
 case class verifyNonce(accountId: String, nonce: String)
+case class isBestNonce(ip_address: String, accountId: String, nonce: String)
 case class submitNonce(accountId: String, nonce: String)
 
 class DeadlineSubmitter extends Actor with ActorLogging {
@@ -19,9 +20,12 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     DefaultFormats.withBigDecimal
   protected implicit val timeout: Timeout = 5 seconds
 
-  def receive() = {
-    case verifyNonce(accountId: String, nonce: String) => {}
-    case submitNonce(accountId: String, nonce: String) => {}
+  def receive(): Boolean = {
+    case verifyNonce(accountId: String, nonce: String) => {true}
+    case isBestNonce(ip_address: String, accountId: String, nonce: String) => {
+      true
+    }
+    case submitNonce(accountId: String, nonce: String) => {true}
   }
 
   def calculateDeadline(accountId: String, nonce: String): Long  = {

@@ -27,23 +27,22 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
       requestType match {
         case "submitNonce" => {
           try {
-            params("nonce")
-            params("accountId")
+            val ip = request.getRemoteAddr()
+            val nonce = params("nonce")
+            val accountId = params("accountId")
 
             // verify nonce validitiy
-
-            // if it is invalid, ban the IP temporarily
-
-            // check if user is already in pool
-            // if so, update the last submit time
-
-            // if not, add a new user
-
-            // check if this is the best deadline so far
-
-            // if it is, submit it to a main node
-
-            // otherwise, record it and change the current reward shares
+            if(Global.deadlineSubmitter ? verifyNonce(accountId, nonce)) {
+              if(!(Global.userManager ? containsUser(ip))){
+                Global.userManager ! addUser(ip, accountId)
+              }
+              if(Global.deadlineSubmitter ? isBestNonce(ip, accountId, nonce)) {
+                Global.deadlineSubmitter ! submitNonce(accountId, nonce)
+              }
+            } else {
+              Global.userManager ! banUser(ip)
+            }
+            // Update statistics
           } catch {
             case e: NoSuchElementException => "No account ID or nonce provided"
           }
