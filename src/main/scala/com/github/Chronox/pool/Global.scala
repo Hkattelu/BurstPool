@@ -6,7 +6,7 @@ import scala.collection.concurrent.TrieMap
 
 object Global {
   var stateUpdater: ActorRef = null
-  var burstChecker: ActorRef = null
+  var burstPriceChecker: ActorRef = null
   var lastBlockGetter: ActorRef = null
   var deadlineChecker: ActorRef = null
   var deadlineSubmitter: ActorRef = null

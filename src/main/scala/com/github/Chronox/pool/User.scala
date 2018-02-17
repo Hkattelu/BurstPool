@@ -12,5 +12,5 @@ class User (
   var reported_TB: String,
   var miner_type: String,
   ) {
-  def this() = this(null, null, false, null, 0.0, 0.0, null, null, false, null)
+  def this() = this(null, null, false, null, 0.0, 0.0, null, null)
 }

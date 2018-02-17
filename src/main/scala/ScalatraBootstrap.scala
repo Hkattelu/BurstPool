@@ -7,7 +7,7 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
 
   val system = ActorSystem()
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
-  Global.burstChecker = system.actorOf(Props[BURSTChecker])
+  Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
   Global.lastBlockGetter = system.actorOf(Props[LastBlockGetter])
   Global.userManager = system.actorOf(Props[UserManager])
   

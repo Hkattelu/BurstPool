@@ -11,7 +11,7 @@ import net.liftweb.json._
 case class updateBurstPriceInfo()
 case class BurstPriceInfo(price_usd:String, price_btc:String)
 
-class BURSTChecker extends Actor with ActorLogging {
+class BurstPriceChecker extends Actor with ActorLogging {
 
   import akka.pattern.pipe
   import context.dispatcher
