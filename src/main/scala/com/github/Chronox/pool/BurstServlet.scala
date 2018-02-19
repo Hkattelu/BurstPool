@@ -6,7 +6,7 @@ import akka.util.Timeout
 import org.scalatra._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
-import java.time.LocalDate
+import java.time.LocalDateTime
 import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
@@ -39,7 +39,7 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
               // Check if deadline is best and submit it if it is
               // Update reward shares
             } else {
-              Global.userManager.banUser(ip, LocalDate.now())
+              Global.userManager.banUser(ip, LocalDateTime.now())
             }
             // Update statistics
           } catch {

@@ -1,6 +1,7 @@
 package com.github.Chronox.pool
 
 import org.scalatra.test.scalatest._
+import java.time.LocalDateTime
 import org.scalatest.FunSuiteLike
 import _root_.akka.actor.{Props, ActorSystem}
 import javax.servlet.ServletContext
@@ -66,6 +67,19 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
       "accountId" -> accId, "nonce" -> nonce)){
       status should equal (200)
     }
+  }
+
+  test("Banning a user"){
+    Global.userManager.banUser("1", LocalDateTime.now().plusSeconds(2))
+    Global.userManager.addUser("1", "2") should equal (false)
+    Global.userManager.containsUser("1") should equal (false)
+  }
+
+  test("Unbanning a user"){
+    Global.userManager.banUser("1", LocalDateTime.now().minusSeconds(1))
+    Global.userManager.refreshUsers()
+    Global.userManager.addUser("1", "2") should equal (true)
+    Global.userManager.containsUser("1") should equal (true)
   }
 
   test("Overwriting previous best nonce"){

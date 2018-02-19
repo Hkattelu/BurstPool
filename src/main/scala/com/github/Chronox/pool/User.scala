@@ -1,12 +1,12 @@
 package com.github.Chronox.pool
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 class User (
   var id: String,
   var nickName: String,
   var isActive: Boolean,
-  var lastSubmitTime: LocalDate,
+  var lastSubmitTime: LocalDateTime,
   var pendingBURST: BigDecimal,
   var payedBURST: BigDecimal,
   var reported_TB: String,
