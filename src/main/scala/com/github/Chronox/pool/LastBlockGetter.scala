@@ -12,7 +12,7 @@ case class getNewBlock()
 case class MiningInfo(generationSignature:String,
   baseTarget:String, height:String, targetDeadline:String)
 
-class LastBlockGetter extends Actor with ActorLogging {
+class MiningInfoUpdater extends Actor with ActorLogging {
 
   import akka.pattern.pipe
   import context.dispatcher

@@ -4,6 +4,8 @@ import scala.io.Source
 import scala.util.parsing.json._
 
 object Config {
+  var NODE_ADDRESS: Any = ""
+  var PRICE_ADDRESS: Any = ""
   var POOL_FEE: Any = ""
   var CURRENT_BLOCK_SHARE: Any = ""
   var HISTORIC_BLOCK_SHARE: Any = ""
@@ -30,6 +32,8 @@ object Config {
         false
       }
       case Some(elements: Map[String, Any]) => {
+        NODE_ADDRESS = elements("NODE_ADDRESS")
+        PRICE_ADDRESS = elements("PRICE_ADDRESS")
         POOL_FEE = elements("POOL_FEE")
         CURRENT_BLOCK_SHARE = elements("CURRENT_BLOCK_SHARE")
         HISTORIC_BLOCK_SHARE = elements("HISTORIC_BLOCK_SHARE")

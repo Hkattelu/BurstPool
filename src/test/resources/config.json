@@ -1,4 +1,6 @@
 {
+  "NODE_ADDRESS" : "https://wallet1.burstnation.com:8125",
+  "PRICE_ADDRESS" : "https://api.coinmarketcap.com/v1/ticker/burst/",
 	"POOL_FEE" : "0.02",
 	"CURRENT_BLOCK_SHARE" : "0.18",
 	"HISTORIC_BLOCK_SHARE" : "0.80",

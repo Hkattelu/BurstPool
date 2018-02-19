@@ -8,10 +8,11 @@ import akka.util.ByteString
 import scala.concurrent.duration._
 import net.liftweb.json._
 
-case class updateBurstPriceInfo()
-case class BurstPriceInfo(price_usd:String, price_btc:String)
+case class getNewBlock()
+case class MiningInfo(generationSignature:String,
+  baseTarget:String, height:String, targetDeadline:String)
 
-class BurstPriceChecker extends Actor with ActorLogging {
+class MiningInfoUpdater extends Actor with ActorLogging {
 
   import akka.pattern.pipe
   import context.dispatcher
@@ -21,20 +22,20 @@ class BurstPriceChecker extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
+  val poolURI = Config.NODE_ADDRESS + "/burst?requestType=getMiningInfo"
 
   def receive() = {
-    case updateBurstPriceInfo() => {
-      http.singleRequest(HttpRequest(uri = Config.PRICE_ADDRESS)).pipeTo(self)
+    case getNewBlock() => {
+      http.singleRequest(HttpRequest(uri = poolURI)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          Global.burstInfo = parse(body.utf8String).extract[BurstPriceInfo]  
+          Global.miningInfo = parse(body.utf8String).extract[MiningInfo]
         }
       } 
-    case resp @ HttpResponse(code, _, _, _) => {
+    case resp @ HttpResponse(code, _, _, _) =>
       log.info("Request failed, response code: " + code)
       resp.discardEntityBytes()
-    }
   }
 }

@@ -21,7 +21,6 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   get("/"){
-
     try {
       val requestType = params("requestType")
       requestType match {
@@ -31,16 +30,16 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
             val nonce = params("nonce")
             val accountId = params("accountId")
 
-            // verify nonce validitiy
-            if(Global.deadlineSubmitter ? verifyNonce(accountId, nonce)) {
-              if(!(Global.userManager ? containsUser(ip))){
-                Global.userManager ! addUser(ip, accountId)
+            if(Global.deadlineSubmitter verifyNonce (accountId -> nonce)) {
+              if(!(Global.userManager containsUser ip)){
+                Global.userManager addUser (ip -> accountId)
               }
+              // Update reward shares
               if(Global.deadlineSubmitter ? isBestNonce(ip, accountId, nonce)) {
                 Global.deadlineSubmitter ! submitNonce(accountId, nonce)
               }
             } else {
-              Global.userManager ! banUser(ip)
+              Global.userManager banUser ip
             }
             // Update statistics
           } catch {
@@ -53,6 +52,5 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
     } catch {
       case e: NoSuchElementException => "Invalid request type"
     }
-
   }
 }

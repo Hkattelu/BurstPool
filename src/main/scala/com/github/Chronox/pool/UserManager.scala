@@ -1,33 +1,41 @@
 package com.github.Chronox.pool
 
-import akka.actor.{ Actor, ActorLogging }
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
-import akka.util.ByteString
 import scala.concurrent.duration._
-import net.liftweb.json._
+import java.time.LocalDate
 
-case class addUser(ip_address: String, accountId:String)
-case class containsUser(ip_address: String)
-case class banUser(ip_address: String)
-case class refreshUsers()
-
-class UserManager extends Actor with ActorLogging {
-
-  import akka.pattern.pipe
-  import context.dispatcher
-
-  implicit val formats = DefaultFormats
-  final implicit val materializer: ActorMaterializer = 
-    ActorMaterializer(ActorMaterializerSettings(context.system))
+object UserManager {
 
   var activeUsers = scala.collection.mutable.Map[String, User]()
+  var bannedAddresses = scala.collection.mutable.Map[String, LocalDate]()
 
-  def receive(): Boolean = {
-    case banUser(ip_address: String) => {}
-    case containsUser(ip_address: String) => {true}
-    case addUser(ip_address: String, accountId: String) => {}
-    case refreshUsers() => {}
+  def containsUser(ip_address: String): Boolean = {
+    activeUsers contains ip_address
+  }
+
+  def addUser(ip_address: String, accountId: String): Boolean = {
+    // Don't add user's with banned IP's
+    if (bannedAddresses contains ip_address) false
+    var newUser = new User
+    newUser.isActive = true
+    newUser.id = accountId
+    newUser.lastSubmitTime = LocalDate.now()
+    activeUsers += (ip_address->newUser)
+    true
+  }
+
+  def banUser(ip_address: String, until: LocalDate) = {
+    bannedAddresses += (ip_address->until)
+  }
+
+  def refreshUsers() = {
+    bannedAddresses.retain((k,v) => v isAfter LocalDate.now())
+  }
+
+  def updateSubmitTime(ip_address: String): Boolean = {
+    if (bannedAddresses contains ip_address) false
+    var userToUpdate = activeUsers(ip_address)
+    userToUpdate.lastSubmitTime = LocalDate.now()
+    activeUsers(ip_address) = userToUpdate
+    true
   }
 }

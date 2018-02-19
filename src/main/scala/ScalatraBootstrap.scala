@@ -8,9 +8,8 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
   val system = ActorSystem()
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
   Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
-  Global.lastBlockGetter = system.actorOf(Props[LastBlockGetter])
+  Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
   Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
-  Global.userManager = system.actorOf(Props[UserManager])
   
   override def init(context: ServletContext) {
     if(!Config.init()) return

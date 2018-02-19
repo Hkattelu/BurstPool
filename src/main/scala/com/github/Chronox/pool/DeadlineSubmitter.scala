@@ -20,7 +20,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     DefaultFormats.withBigDecimal
   protected implicit val timeout: Timeout = 5 seconds
 
-  def receive(): Boolean = {
+  def receive() = {
     case verifyNonce(accountId: String, nonce: String) => {true}
     case isBestNonce(ip_address: String, accountId: String, nonce: String) => {
       true

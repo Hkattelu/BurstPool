@@ -11,8 +11,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   val system = ActorSystem()
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
   Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
-  Global.lastBlockGetter = system.actorOf(Props[LastBlockGetter])
-  Global.userManager = system.actorOf(Props[UserManager])
+  Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
 
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
