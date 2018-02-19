@@ -26,8 +26,8 @@ class StateUpdater extends Actor with ActorLogging {
   def receive() = {
     case StateTick() => {
       Global.burstPriceChecker ! updateBurstPriceInfo()
-      Global.lastBlockGetter ! getNewBlock()
-      Global.userManager ! refreshUsers()
+      Global.miningInfoUpdater ! getNewBlock()
+      Global.userManager.refreshUsers()
     }
   }
 }

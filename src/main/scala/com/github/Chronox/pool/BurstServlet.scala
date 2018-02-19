@@ -6,6 +6,7 @@ import akka.util.Timeout
 import org.scalatra._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
+import java.time.LocalDate
 import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
@@ -30,16 +31,15 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
             val nonce = params("nonce")
             val accountId = params("accountId")
 
-            if(Global.deadlineSubmitter verifyNonce (accountId -> nonce)) {
+            //verify if the nonce is valid
+            if(Global.deadlineChecker.verifyNonce(accountId, nonce)) {
               if(!(Global.userManager containsUser ip)){
-                Global.userManager addUser (ip -> accountId)
+                Global.userManager.addUser(ip, accountId)
               }
+              // Check if deadline is best and submit it if it is
               // Update reward shares
-              if(Global.deadlineSubmitter ? isBestNonce(ip, accountId, nonce)) {
-                Global.deadlineSubmitter ! submitNonce(accountId, nonce)
-              }
             } else {
-              Global.userManager banUser ip
+              Global.userManager.banUser(ip, LocalDate.now())
             }
             // Update statistics
           } catch {

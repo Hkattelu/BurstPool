@@ -9,7 +9,8 @@ object Global {
   var burstPriceChecker: ActorRef = null
   var miningInfoUpdater: ActorRef = null
   var deadlineSubmitter: ActorRef = null
-  var userManager: userManager = UserManager
+  val userManager = UserManager
+  val deadlineChecker = DeadlineChecker
 
   var miningInfo: MiningInfo = MiningInfo(null, null, null, null)
   var burstInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")

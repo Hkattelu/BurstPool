@@ -22,11 +22,11 @@ class MiningInfoUpdater extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
-  val poolURI = Config.NODE_ADDRESS + "/burst?requestType=getMiningInfo"
+  val getBlockURI = Config.NODE_ADDRESS + "/burst?requestType=getBlock"
 
   def receive() = {
     case getNewBlock() => {
-      http.singleRequest(HttpRequest(uri = poolURI)).pipeTo(self)
+      http.singleRequest(HttpRequest(uri = getBlockURI)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>

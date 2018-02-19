@@ -21,11 +21,11 @@ class DeadlineSubmitter extends Actor with ActorLogging {
   protected implicit val timeout: Timeout = 5 seconds
 
   def receive() = {
-    case verifyNonce(accountId: String, nonce: String) => {true}
+    case verifyNonce(accountId: String, nonce: String) => {}
     case isBestNonce(ip_address: String, accountId: String, nonce: String) => {
       true
     }
-    case submitNonce(accountId: String, nonce: String) => {true}
+    case submitNonce(accountId: String, nonce: String) => {}
   }
 
   def calculateDeadline(accountId: String, nonce: String): Long  = {

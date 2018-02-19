@@ -24,7 +24,7 @@ class BurstPriceChecker extends Actor with ActorLogging {
 
   def receive() = {
     case updateBurstPriceInfo() => {
-      http.singleRequest(HttpRequest(uri = Config.PRICE_ADDRESS)).pipeTo(self)
+      http.singleRequest(HttpRequest(uri =""+Config.PRICE_ADDRESS)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>

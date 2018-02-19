@@ -12,6 +12,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
   Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
   Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
+  Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
 
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
@@ -50,13 +51,19 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   }
 
   test("Submitting a bad nonce"){
-    get("/burst", Map("requestType" -> "submitNonce")){
+    val accId = "15240509513051186062"
+    val nonce = "2"
+    get("/burst", Map("requestType" -> "submitNonce",
+      "accountId" -> accId, "nonce" -> nonce)){
       status should equal (200)
     }
   }
 
   test("Submitting a valid but not best nonce"){
-    get("/burst", Map("requestType" -> "submitNonce")){
+    val accId = "15240509513051186062"
+    val nonce = "889638458"
+    get("/burst", Map("requestType" -> "submitNonce",
+      "accountId" -> accId, "nonce" -> nonce)){
       status should equal (200)
     }
   }
