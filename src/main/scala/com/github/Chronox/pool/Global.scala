@@ -1,5 +1,7 @@
 package com.github.Chronox.pool
 
+import actors._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import akka.actor.ActorRef
 import scala.collection.concurrent.TrieMap
@@ -14,7 +16,8 @@ object Global {
   val userManager = UserManager
   val deadlineChecker = DeadlineChecker
 
-  var miningInfo: MiningInfo = MiningInfo(null, null, 0L, null, null)
+  var miningInfo: MiningInfo = MiningInfo(
+    null, null, 0L, null, null, null, 0L, 0L)
   var difficulty: Difficulty = Difficulty(null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 }

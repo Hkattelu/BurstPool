@@ -1,4 +1,4 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.servlets
 
 import akka.actor.ActorSystem
 import org.scalatra._

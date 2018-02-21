@@ -1,5 +1,7 @@
 package com.github.Chronox.pool
 
+import hash.Shabal256
+
 import java.math.BigInteger
 import java.nio.ByteBuffer
 
@@ -9,10 +11,7 @@ object DeadlineChecker {
   val shabal = new Shabal256()
 
   def verifyNonce(accountId: String, nonce: String): Boolean = {
-    shabal.update(genSigBytes)
-    val heightBytes = ByteBuffer.allocate(Long.SIZE / Byte.SIZE).putLong(
-      Global.miningInfo.height).array()
-    shabal.update(heightBytes)
+    return true
   }
 
   def getScoopNum(): Int = {
@@ -24,6 +23,7 @@ object DeadlineChecker {
     shabal.reset()
     shabal.update(seedBuffer.array())
     val generationHash = new BigInteger(1,shabal.digest())
-    return generationHash.mod(Global.SCOOPS_PER_PLOT).intValue()
+    return generationHash.mod(
+      BigInteger.valueOf(Global.SCOOPS_PER_PLOT)).intValue()
   }
 }

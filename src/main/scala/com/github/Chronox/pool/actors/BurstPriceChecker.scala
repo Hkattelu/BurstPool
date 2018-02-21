@@ -1,4 +1,7 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.actors
+
+import com.github.Chronox.pool.Global
+import com.github.Chronox.pool.Config
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
@@ -29,7 +32,7 @@ class BurstPriceChecker extends Actor with ActorLogging {
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          Global.burstInfo = parse(body.utf8String).extract[BurstPriceInfo]  
+          Global.burstPriceInfo = parse(body.utf8String).extract[BurstPriceInfo]  
         }
       } 
     case resp @ HttpResponse(code, _, _, _) => {

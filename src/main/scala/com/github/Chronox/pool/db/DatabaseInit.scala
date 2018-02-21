@@ -1,4 +1,4 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.db
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.squeryl.adapters.{H2Adapter, MySQLAdapter}

@@ -1,4 +1,4 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.db
 
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Schema

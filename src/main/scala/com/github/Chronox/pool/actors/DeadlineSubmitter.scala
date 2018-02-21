@@ -1,12 +1,11 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.actors
+
+import com.github.Chronox.pool.Global
 
 import akka.actor.{ Actor, ActorLogging }
-import akka.pattern.ask
 import akka.util.Timeout
 import org.scalatra._
-import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
 
@@ -22,17 +21,15 @@ class DeadlineSubmitter extends Actor with ActorLogging {
 
   def receive() = {
     case verifyNonce(accountId: String, nonce: String) => {}
-    case isBestNonce(ip_address: String, accountId: String, nonce: String) => {
-      true
-    }
+    case isBestNonce(ip_address: String, accountId: String, nonce: String) => {}
     case submitNonce(accountId: String, nonce: String) => {}
   }
 
   def calculateDeadline(accountId: String, nonce: String): Long  = {
-    0L
+    return 0L
   }
 
   def checkValidDeadline(deadline: Long): Boolean = {
-    false
+    return false
   }
 }

@@ -1,14 +1,10 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.actors
 
 import akka.actor.{ Actor, ActorLogging }
-import akka.pattern.ask
 import akka.util.Timeout
-import org.scalatra._
-import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
-import org.scalatra.json._ 
 
 class UserPayout extends Actor with ActorLogging {
 

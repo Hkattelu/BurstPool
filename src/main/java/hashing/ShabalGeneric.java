@@ -1,5 +1,7 @@
 // $Id: ShabalGeneric.java 231 2010-06-16 21:46:06Z tp $
 
+package hash;
+
 /**
  * This class implements Shabal for all output sizes from 32 to 512 bits
  * (inclusive, only multiples of 32 are supported). The output size must

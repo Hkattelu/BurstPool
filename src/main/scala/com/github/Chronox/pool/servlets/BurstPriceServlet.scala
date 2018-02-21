@@ -1,12 +1,10 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.servlets
 
-import akka.actor.{Actor, ActorRef, ActorSystem}
-import akka.pattern.ask
+import com.github.Chronox.pool.Global
+
 import akka.util.Timeout
 import org.scalatra._
-import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._
 

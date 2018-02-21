@@ -1,4 +1,6 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.actors
+
+import com.github.Chronox.pool.Global
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http

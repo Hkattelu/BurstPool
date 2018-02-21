@@ -1,4 +1,4 @@
-package org.scalatra.example.data
+package org.scalatra.example.data.db
 
 import org.squeryl.Session
 import org.squeryl.SessionFactory

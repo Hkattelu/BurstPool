@@ -1,4 +1,7 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.actors
+
+import com.github.Chronox.pool.Global
+import com.github.Chronox.pool.Config
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
@@ -13,8 +16,7 @@ case class updateBlockChainStatus()
 case class MiningInfo(generationSignature:String,
   baseTarget:String, height: Long, blockReward: String,
   generator: String, generatorRS: String,
-  numberOfTransactions: Long, blockReward: String,
-  timeStamp: Long)
+  numberOfTransactions: Long, timeStamp: Long)
 case class Difficulty(cumulativeDifficulty: String)
 
 class MiningInfoUpdater extends Actor with ActorLogging {
@@ -42,10 +44,11 @@ class MiningInfoUpdater extends Actor with ActorLogging {
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
           val jsonResponse = parse(body.utf8String)
-          if (jsonResponse contains "cumulativeDifficulty"){
-            Global.difficulty = jsonResponse.extract[Difficulty]
-          } else {
-            Global.miningInfo = jsonResponse.extract[MiningInfo]  
+          jsonResponse \ "cumulativeDifficulty" match {
+            case JString(difficulty) => {
+              Global.difficulty = jsonResponse.extract[Difficulty]
+            }
+            case _ => Global.miningInfo = jsonResponse.extract[MiningInfo]  
           }
         }
       } 

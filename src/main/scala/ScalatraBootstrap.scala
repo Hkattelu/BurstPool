@@ -1,5 +1,8 @@
 import _root_.akka.actor.{Props, ActorSystem}
 import com.github.Chronox.pool._
+import com.github.Chronox.pool.actors._
+import com.github.Chronox.pool.servlets._
+import com.github.Chronox.pool.db._
 import org.scalatra._
 import javax.servlet.ServletContext
 

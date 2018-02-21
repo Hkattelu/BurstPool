@@ -1,4 +1,4 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.db
 
 class Share(
   var burstValue: BigDecimal,

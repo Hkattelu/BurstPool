@@ -1,5 +1,7 @@
 package com.github.Chronox.pool
 
+import db.User
+
 import scala.concurrent.duration._
 import java.time.LocalDateTime
 
