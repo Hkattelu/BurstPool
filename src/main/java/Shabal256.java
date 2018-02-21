@@ -1,7 +1,5 @@
 // $Id: Shabal256.java 213 2010-06-03 02:48:09Z tp $
 
-package fr.cryptohash;
-
 /**
  * <p>This class implements the Shabal-256 digest algorithm under the
  * {@link Digest} API.</p>
