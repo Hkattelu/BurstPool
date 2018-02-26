@@ -46,6 +46,7 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
           println(request.toString())
         }
         case "getMiningInfo" => Global.miningInfo
+        case "getDifficulty" => Global.difficulty
       }
     } catch {
       case e: NoSuchElementException => "Invalid request type"

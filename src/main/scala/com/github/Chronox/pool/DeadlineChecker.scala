@@ -7,15 +7,72 @@ import java.nio.ByteBuffer
 
 object DeadlineChecker {
 
-  var currentScoopNum: Int = -1
+  val HASH_SIZE = 32;
+  val HASHES_PER_SCOOP = 2;
+  val SCOOP_SIZE = HASHES_PER_SCOOP * HASH_SIZE;
+  val SCOOPS_PER_PLOT = 4096; // original 1MB/plot = 16384
+  val PLOT_SIZE = SCOOPS_PER_PLOT * SCOOP_SIZE;
+  val HASH_CAP = 4096;
+  
   val shabal = new Shabal256()
 
   def verifyNonce(accountId: String, nonce: String): Boolean = {
-    return true
+    return getDeadline(
+      generatePlot(accountId, nonce),
+      getScoopNum(), accountId, nonce).compareTo(Config.TARGET_DEADLINE) <= 0
+  }
+
+  def generatePlot(accountId: String, nonce: String): Array[Byte] = {
+    shabal.reset()
+    val seedBuffer = ByteBuffer.allocate(16) // 8 byte accId + 8 byte nonce
+    val addrBytes = new BigInteger(
+      Global.miningInfo.generationSignature, 10).toByteArray
+    val nonceBytes = new BigInteger(
+      Global.miningInfo.generationSignature, 10).toByteArray
+    seedBuffer.put(addrBytes)
+    seedBuffer.put(nonceBytes)
+
+    val seed = seedBuffer.array()
+    val gendata = new Array[Byte](PLOT_SIZE + seed.length)
+    System.arraycopy(seed, 0, gendata, PLOT_SIZE, seed.length)
+    for{i <- PLOT_SIZE/HASH_SIZE until 0} {
+      shabal.reset()
+      var len = PLOT_SIZE + seed.length - i*HASH_SIZE
+      if(len > HASH_CAP) {
+        len = HASH_CAP
+      }
+      shabal.update(gendata, HASH_SIZE*i, len)
+      shabal.digest(gendata, HASH_SIZE*(i - 1), HASH_SIZE)
+    }
+    shabal.reset()
+    shabal.update(gendata)
+    val finalhash = shabal.digest()
+    var plot = new Array[Byte](PLOT_SIZE)
+    for{i <- 0 until PLOT_SIZE} {
+      plot(i) = (gendata(i) ^ finalhash(i % HASH_SIZE)).asInstanceOf[Byte]
+    }
+    return plot
+  }
+
+  def getDeadline(plot: Array[Byte], scoopNum: Int,
+    accountId: String, nonce: String): BigInteger = {
+    shabal.reset()
+    val genSigBuffer = ByteBuffer.allocate(32)
+    val genSigBytes = new BigInteger(
+      Global.miningInfo.generationSignature, 16).toByteArray
+    genSigBuffer.put(genSigBytes)
+
+    shabal.update(genSigBuffer.array())
+    shabal.update(plot, scoopNum * SCOOP_SIZE, SCOOP_SIZE);
+    val hash = shabal.digest()
+
+    val hit = new BigInteger(1, Array[Byte](hash(7), hash(6), hash(5), hash(4),
+        hash(3), hash(2), hash(1), hash(0)))
+    return hit.divide(BigInteger.valueOf(Global.miningInfo.baseTarget.toLong))
   }
 
   def getScoopNum(): Int = {
-    val seedBuffer = ByteBuffer.allocate(40) // 32 byte gensig + 8byte height
+    val seedBuffer = ByteBuffer.allocate(40) // 32 byte gensig + 8 byte height
     val genSigBytes = new BigInteger(
       Global.miningInfo.generationSignature, 16).toByteArray
     seedBuffer.put(genSigBytes)
@@ -24,6 +81,6 @@ object DeadlineChecker {
     shabal.update(seedBuffer.array())
     val generationHash = new BigInteger(1,shabal.digest())
     return generationHash.mod(
-      BigInteger.valueOf(Global.SCOOPS_PER_PLOT)).intValue()
+      BigInteger.valueOf(SCOOPS_PER_PLOT)).intValue()
   }
 }

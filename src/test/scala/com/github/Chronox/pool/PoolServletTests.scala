@@ -1,5 +1,9 @@
 package com.github.Chronox.pool
 
+import com.github.Chronox.pool._
+import com.github.Chronox.pool.actors._
+import com.github.Chronox.pool.servlets._
+import com.github.Chronox.pool.db._
 import org.scalatra.test.scalatest._
 import java.time.LocalDateTime
 import org.scalatest.FunSuiteLike
@@ -44,6 +48,14 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   test("Getting Mining Info"){
     get("/burst", Map("requestType" -> "getMiningInfo")){
       status should equal (200)
+      body should include ("generationSignature")
+    }
+  }
+
+  test("Getting Blockchain Difficulty"){
+    get("/burst", Map("requestType" -> "getDifficulty")){
+      status should equal (200)
+      body should include ("cumulativeDifficulty")
     }
   }
 

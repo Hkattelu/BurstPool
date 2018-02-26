@@ -7,7 +7,6 @@ import akka.actor.ActorRef
 import scala.collection.concurrent.TrieMap
 
 object Global {
-  val SCOOPS_PER_PLOT = 4096
 
   var stateUpdater: ActorRef = null
   var burstPriceChecker: ActorRef = null
