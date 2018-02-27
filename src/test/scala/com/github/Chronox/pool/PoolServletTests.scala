@@ -68,6 +68,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     val nonce = "2"
     get("/burst", Map("requestType" -> "submitNonce",
       "accountId" -> accId, "nonce" -> nonce)){
+      println(body)
       status should equal (200)
     }
   }
@@ -83,14 +84,14 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
 
   test("Banning a user"){
     Global.userManager.banUser("1", LocalDateTime.now().plusSeconds(2))
-    Global.userManager.addUser("1", "2") should equal (false)
+    Global.userManager.addUser("1", 2) should equal (false)
     Global.userManager.containsUser("1") should equal (false)
   }
 
   test("Unbanning a user"){
     Global.userManager.banUser("1", LocalDateTime.now().minusSeconds(1))
     Global.userManager.refreshUsers()
-    Global.userManager.addUser("1", "2") should equal (true)
+    Global.userManager.addUser("1", 2) should equal (true)
     Global.userManager.containsUser("1") should equal (true)
   }
 

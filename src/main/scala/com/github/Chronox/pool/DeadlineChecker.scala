@@ -16,21 +16,16 @@ object DeadlineChecker {
   
   val shabal = new Shabal256()
 
-  def verifyNonce(accountId: String, nonce: String): Boolean = {
-    return getDeadline(
-      generatePlot(accountId, nonce),
-      getScoopNum(), accountId, nonce).compareTo(Config.TARGET_DEADLINE) <= 0
+  def verifyNonce(accountId: Long, nonce: Long): Boolean = {
+    return getDeadline(generatePlot(accountId, nonce),
+      getScoopNum()).compareTo(Config.TARGET_DEADLINE) <= 0
   }
 
-  def generatePlot(accountId: String, nonce: String): Array[Byte] = {
+  def generatePlot(accountId: Long, nonce: Long): Array[Byte] = {
     shabal.reset()
     val seedBuffer = ByteBuffer.allocate(16) // 8 byte accId + 8 byte nonce
-    val addrBytes = new BigInteger(
-      Global.miningInfo.generationSignature, 10).toByteArray
-    val nonceBytes = new BigInteger(
-      Global.miningInfo.generationSignature, 10).toByteArray
-    seedBuffer.put(addrBytes)
-    seedBuffer.put(nonceBytes)
+    seedBuffer.putLong(accountId)
+    seedBuffer.putLong(nonce)
 
     val seed = seedBuffer.array()
     val gendata = new Array[Byte](PLOT_SIZE + seed.length)
@@ -54,8 +49,7 @@ object DeadlineChecker {
     return plot
   }
 
-  def getDeadline(plot: Array[Byte], scoopNum: Int,
-    accountId: String, nonce: String): BigInteger = {
+  def getDeadline(plot: Array[Byte], scoopNum: Int): BigInteger = {
     shabal.reset()
     val genSigBuffer = ByteBuffer.allocate(32)
     val genSigBytes = new BigInteger(
@@ -80,6 +74,7 @@ object DeadlineChecker {
     shabal.reset()
     shabal.update(seedBuffer.array())
     val generationHash = new BigInteger(1,shabal.digest())
+    println("Finished scoop num")
     return generationHash.mod(
       BigInteger.valueOf(SCOOPS_PER_PLOT)).intValue()
   }

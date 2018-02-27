@@ -14,7 +14,7 @@ object UserManager {
     activeUsers contains ip_address
   }
 
-  def addUser(ip_address: String, accountId: String): Boolean = {
+  def addUser(ip_address: String, accountId: Long): Boolean = {
     // Don't add user's with banned IP's
     if (bannedAddresses contains ip_address) return false
     var newUser = new User
@@ -27,8 +27,6 @@ object UserManager {
 
   def banUser(ip_address: String, until: LocalDateTime) = {
     bannedAddresses += (ip_address->until)
-    println(LocalDateTime.now().toString())
-    println(ip_address + ":" + until.toString())
   }
 
   def refreshUsers() = {

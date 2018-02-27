@@ -9,6 +9,8 @@ import java.time.LocalDateTime
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
 
+import java.lang.Long
+
 class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats =
@@ -26,8 +28,8 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
         case "submitNonce" => {
           try {
             val ip = request.getRemoteAddr()
-            val nonce = params("nonce")
-            val accountId = params("accountId")
+            val accountId = Long.parseUnsignedLong(params("accountId"))
+            val nonce = Long.parseUnsignedLong(params("nonce"))
 
             //verify if the nonce is valid
             if(Global.deadlineChecker.verifyNonce(accountId, nonce)) {

@@ -5,8 +5,8 @@ import scala.util.parsing.json._
 import java.math.BigInteger
 
 object Config {
-  var NODE_ADDRESS: Any = ""
-  var PRICE_ADDRESS: Any = ""
+  var NODE_ADDRESS: String = ""
+  var PRICE_ADDRESS: String = ""
   var POOL_FEE: Any = ""
   var CURRENT_BLOCK_SHARE: Any = ""
   var HISTORIC_BLOCK_SHARE: Any = ""
@@ -33,8 +33,8 @@ object Config {
         return false
       }
       case Some(elements: Map[String, Any]) => {
-        NODE_ADDRESS = elements("NODE_ADDRESS")
-        PRICE_ADDRESS = elements("PRICE_ADDRESS")
+        NODE_ADDRESS = elements("NODE_ADDRESS").asInstanceOf[String]
+        PRICE_ADDRESS = elements("PRICE_ADDRESS").asInstanceOf[String]
         POOL_FEE = elements("POOL_FEE")
         CURRENT_BLOCK_SHARE = elements("CURRENT_BLOCK_SHARE")
         HISTORIC_BLOCK_SHARE = elements ("HISTORIC_BLOCK_SHARE")

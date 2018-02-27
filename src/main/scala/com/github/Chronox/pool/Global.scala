@@ -16,7 +16,7 @@ object Global {
   val deadlineChecker = DeadlineChecker
 
   var miningInfo: MiningInfo = MiningInfo(
-    null, null, 0L, null, null, null, 0L, 0L)
+    null, null, 0L, null, null, null, null)
   var difficulty: Difficulty = Difficulty(null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 }

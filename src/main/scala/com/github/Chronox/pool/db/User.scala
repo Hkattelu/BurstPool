@@ -3,7 +3,7 @@ package com.github.Chronox.pool.db
 import java.time.LocalDateTime
 
 class User (
-  var id: String,
+  var id: Long,
   var nickName: String,
   var isActive: Boolean,
   var lastSubmitTime: LocalDateTime,
@@ -12,5 +12,5 @@ class User (
   var reported_TB: String,
   var miner_type: String,
   ) {
-  def this() = this(null, null, false, null, 0.0, 0.0, null, null)
+  def this() = this(0L, null, false, null, 0.0, 0.0, null, null)
 }

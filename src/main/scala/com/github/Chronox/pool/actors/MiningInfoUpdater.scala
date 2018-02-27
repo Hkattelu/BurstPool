@@ -1,5 +1,6 @@
 package com.github.Chronox.pool.actors
 
+
 import com.github.Chronox.pool.Global
 import com.github.Chronox.pool.Config
 
@@ -10,13 +11,14 @@ import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
 import akka.util.ByteString
 import scala.concurrent.duration._
 import net.liftweb.json._
+import java.time.LocalDateTime
 
 case class getNewBlock()
 case class updateBlockChainStatus()
 case class MiningInfo(generationSignature:String,
   baseTarget:String, height: Long, blockReward: String,
   generator: String, generatorRS: String,
-  numberOfTransactions: Long, timeStamp: Long)
+  numberOfTransactions: String)
 case class Difficulty(cumulativeDifficulty: String)
 
 class MiningInfoUpdater extends Actor with ActorLogging {
@@ -48,7 +50,9 @@ class MiningInfoUpdater extends Actor with ActorLogging {
             case JString(difficulty) => {
               Global.difficulty = jsonResponse.extract[Difficulty]
             }
-            case _ => Global.miningInfo = jsonResponse.extract[MiningInfo]  
+            case _ => {
+              Global.miningInfo = jsonResponse.extract[MiningInfo]
+            }  
           }
         }
       } 
