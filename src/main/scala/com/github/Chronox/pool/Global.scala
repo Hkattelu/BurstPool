@@ -11,8 +11,10 @@ object Global {
   var stateUpdater: ActorRef = null
   var burstPriceChecker: ActorRef = null
   var miningInfoUpdater: ActorRef = null
-  var deadlineSubmitter: ActorRef = null
+  var deadlineSubmitter = DeadlineSubmitter
   val userManager = UserManager
+  val rewardManager = RewardManager
+  val poolStatistics = PoolStatistics
   val deadlineChecker = DeadlineChecker
 
   var miningInfo: MiningInfo = MiningInfo(

@@ -15,10 +15,14 @@ object DeadlineChecker {
   val HASH_CAP = 4096;
   
   val shabal = new Shabal256()
+  var currentBestDeadline: BigInteger = BigInteger.valueOf(0)
 
-  def verifyNonce(accountId: Long, nonce: Long): Boolean = {
-    return getDeadline(generatePlot(accountId, nonce),
-      getScoopNum()).compareTo(Config.TARGET_DEADLINE) <= 0
+  def verifyNonce(accountId: Long, nonce: Long): BigInteger = {
+    return getDeadline(generatePlot(accountId, nonce), getScoopNum())
+  }
+
+  def isBestDeadline(deadline: BigInteger): Boolean = {
+    return deadline.compareTo(currentBestDeadline) <= 0
   }
 
   def generatePlot(accountId: Long, nonce: Long): Array[Byte] = {

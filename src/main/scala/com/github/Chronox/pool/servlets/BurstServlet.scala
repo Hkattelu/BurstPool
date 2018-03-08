@@ -1,6 +1,7 @@
 package com.github.Chronox.pool.servlets
 
 import com.github.Chronox.pool.Global
+import com.github.Chronox.pool.Config
 
 import akka.util.Timeout
 import org.scalatra._
@@ -28,24 +29,26 @@ class BurstServlet extends ScalatraServlet with JacksonJsonSupport {
         case "submitNonce" => {
           try {
             val ip = request.getRemoteAddr()
-            val accountId = Long.parseUnsignedLong(params("accountId"))
+            val accId = Long.parseUnsignedLong(params("accountId"))
             val nonce = Long.parseUnsignedLong(params("nonce"))
+            val deadline = Global.deadlineChecker.verifyNonce(accId, nonce)
 
-            //verify if the nonce is valid
-            if(Global.deadlineChecker.verifyNonce(accountId, nonce)) {
-              if(!(Global.userManager containsUser ip)){
-                Global.userManager.addUser(ip, accountId)
+            if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
+              if(!(Global.userManager containsUser ip))
+                Global.userManager.addUser(ip, accId)
+
+              if(Global.deadlineChecker isBestDeadline deadline){
+                Global.deadlineSubmitter.submitNonce(accId, nonce, deadline)
+                Global.rewardManager.updateRewardShares()
               }
-              // Check if deadline is best and submit it if it is
-              // Update reward shares
             } else {
               Global.userManager.banUser(ip, LocalDateTime.now())
             }
             // Update statistics
+            Global.poolStatistics.updateStatistics()
           } catch {
             case e: NoSuchElementException => "No account ID or nonce provided"
           }
-          println(request.toString())
         }
         case "getMiningInfo" => Global.miningInfo
         case "getDifficulty" => Global.difficulty
