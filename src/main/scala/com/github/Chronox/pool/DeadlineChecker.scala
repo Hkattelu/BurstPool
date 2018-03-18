@@ -65,12 +65,14 @@ object DeadlineChecker {
     val hash = shabal.digest()
 
     val hit = new BigInteger(1, Array[Byte](hash(7), hash(6), hash(5), hash(4),
-        hash(3), hash(2), hash(1), hash(0)))
+      hash(3), hash(2), hash(1), hash(0)))
     return hit.divide(BigInteger.valueOf(Global.miningInfo.baseTarget.toLong))
   }
 
   def getScoopNum(): Int = {
     val seedBuffer = ByteBuffer.allocate(40) // 32 byte gensig + 8 byte height
+
+    //Race condition: Fails if the mining info response hasn't been received yet
     val genSigBytes = new BigInteger(
       Global.miningInfo.generationSignature, 16).toByteArray
     seedBuffer.put(genSigBytes)

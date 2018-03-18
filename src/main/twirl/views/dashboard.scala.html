@@ -7,7 +7,7 @@
       <h1 class="title">Burstcoin mining pool</h1>
     </div>
   </div>
-  <div class="main-panels row">
+  <div class="main-panels row" ng-controller="InfoCtrl">
     <div class="col-md-4 col-sm-4 col-xs-12">
       <div class="info-container">Current Block Shares</div>
     </div>
@@ -21,18 +21,18 @@
           </tr>
           <tr>
             <td><img src="images/burstcoin.png" alt="BURST"/></td>
-            <td id="pending-BURST"></td>
-            <td id="earned-BURST"></td>
+            <td>{{pendingBURST}}</td>
+            <td>{{earnedBURST}}</td>
           </tr>
           <tr>
             <td><img src="images/dollar.png" alt="USD"/></td>
-            <td id="pending-USD"></td>
-            <td id="earned-USD"></td>
+            <td>{{pendingUSD}}</td>
+            <td>{{earnedUSD}}</td>
           </tr>
           <tr>
             <td><img src="images/bitcoin.png" alt="BTC"/></td>
-            <td id="pending-BTC"></td>
-            <td id="earned-BTC"></td>
+            <td>{{pendingBTC}}</td>
+            <td>{{earnedBTC}}</td>
           </tr>
         </table>
         <br>
@@ -120,5 +120,5 @@
   </div>
   <script src="scripts/modal.js"></script>
   <script src="scripts/routes.js"></script>
-  <script src="scripts/burstPrice.js"></script>
+  <script src="scripts/burstInfo.js"></script>
 } 
