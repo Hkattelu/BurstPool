@@ -7,13 +7,35 @@
       <h1 class="title">Burstcoin mining pool</h1>
     </div>
   </div>
-  <div class="main-panels row" ng-controller="InfoCtrl">
-    <div class="col-md-4 col-sm-4 col-xs-12">
-      <div class="info-container">Current Block Shares</div>
-    </div>
+  <div class="main-panels row">
     <div class="col-md-4 col-sm-4 col-xs-12">
       <div class="info-container">
-        <table>
+        <strong>Mining Info</strong>
+        <table align="center">
+          <tr>
+            <td>Current block reward</td>
+            <td>{{miningInfo.blockReward}}</td>
+          </tr>
+          <tr>
+            <td>Base Target</td>
+            <td>{{miningInfo.baseTarget}}</td>
+          </tr>
+          <tr>
+            <td>Blockchain height</td>
+            <td>{{miningInfo.height}}</td>
+          </tr>
+          <tr>
+            <td>Last block generator Address</td>
+            <td>{{miningInfo.generatorRS}}</td>
+          </tr>
+          <tr>
+            <td># of pending transactions</td>
+            <td>{{miningInfo.numberOfTransactions}}</td>
+          </tr>
+        </table>
+      </div>
+      <div class="info-container">
+        <table align="center">
           <tr>
             <th></th>
             <th>Pending Payment</th>
@@ -44,7 +66,14 @@
       </div>
     </div>
     <div class="col-md-4 col-sm-4 col-xs-12">
-      <div class="info-container">Historic Block Shares</div>
+      <div class="info-container tall">
+        <strong>Current Block Shares</strong>
+      </div>
+    </div>
+    <div class="col-md-4 col-sm-4 col-xs-12">
+      <div class="info-container tall">
+        <strong>Historic Block Shares</strong>
+      </div>
     </div>
   </div>
   <div class="select-graph row">

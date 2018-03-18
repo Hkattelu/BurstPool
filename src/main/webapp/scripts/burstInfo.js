@@ -9,7 +9,7 @@ function trim(num) {
 }
 
 angular.module('burstPool', []).controller(
-  'InfoCtrl', function ($http, $scope, $location) {
+  'InfoCtrl', function ($http, $scope, $location, $parse) {
   $scope.updatePrice = function () {
     $http.get("/getBurstPrice").then(function(response) {
       price_usd = response.data.price_usd;
@@ -20,10 +20,20 @@ angular.module('burstPool', []).controller(
       $scope.earnedUSD = trim(earned_burst * price_usd);
       $scope.pendingBTC = trim(pending_burst * price_btc);
       $scope.earnedBTC = trim(earned_burst * price_btc);
-    })
+    }).catch(function(err){console.log(err)})
+  };
+
+  $scope.updateMiningInfo = function () {
+    $http.get("/burst", {
+      params:{"requestType":"getMiningInfo"}}).
+    then(function(response) {
+      $parse("miningInfo").assign($scope, response.data)
+    }).catch(function(err){console.log(err)})
   };
 
   $scope.updatePrice();
+  $scope.updateMiningInfo();
   setInterval($scope.updatePrice, 10000);
+  setInterval($scope.updateMiningInfo, 10000);
 });
 

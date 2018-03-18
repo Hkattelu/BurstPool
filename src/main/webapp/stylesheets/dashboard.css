@@ -1,10 +1,15 @@
+* , a:link, a:visited {
+  color: white;
+}
+
 body {
   background-color: white;
+  background-image: url("../images/background1.jpg");
 }
 
 .title {
   text-align: center;
-  color: crimson;
+  color: blue;
 }
 
 .center_align {
@@ -18,6 +23,17 @@ body {
   margin-bottom: 2vh;
   min-height: 30vh;
   text-align: center;
+  text-overflow: ellipsis;
+  background-color: rgba(256, 256, 256, 0.4);
+  z-index: 1;
+}
+
+.tall {
+  height: 63vh;
+}
+
+table {
+  margin-top: 2vh;
 }
 
 table, th, td {
@@ -34,7 +50,7 @@ table, th, td {
   border: 2px solid blue;
   border-radius: 5px;
   padding: 10px;
-  min-height: 50vh;
+  min-height: 0vh;
 }
 
 #graph-selector > ul {
@@ -43,14 +59,17 @@ table, th, td {
   padding: 0;
 }
 
-#graph-selector button {
+#graph-selector > ul > li {
   border: 1px solid blue;
   border-radius: 3px;
-  margin-top: 1vh;
+  margin-top: 2vh;
+  margin-bottom: 2vh;
+  padding-top: 5px;
+  padding-bottom: 5px;
   width: 100%;
   height: 4vh;
   text-align: center;
-  background-color: white;
+  background-color: rgba(256, 256, 256, 0.0);
 }
 
 #graph-container {

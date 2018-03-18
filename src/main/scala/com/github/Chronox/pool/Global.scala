@@ -19,6 +19,5 @@ object Global {
 
   var miningInfo: MiningInfo = MiningInfo(
     null, null, 0L, null, null, null, null)
-  var difficulty: Difficulty = Difficulty(null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 }

@@ -14,12 +14,10 @@ import net.liftweb.json._
 import java.time.LocalDateTime
 
 case class getNewBlock()
-case class updateBlockChainStatus()
 case class MiningInfo(generationSignature:String,
   baseTarget:String, height: Long, blockReward: String,
   generator: String, generatorRS: String,
   numberOfTransactions: String)
-case class Difficulty(cumulativeDifficulty: String)
 
 class MiningInfoUpdater extends Actor with ActorLogging {
 
@@ -33,27 +31,15 @@ class MiningInfoUpdater extends Actor with ActorLogging {
   val http = Http(context.system)
   val burstRequest = "/burst?requestType="
   val getBlockURI = Config.NODE_ADDRESS + burstRequest + "getBlock"
-  val getStatusURI = Config.NODE_ADDRESS + burstRequest + "getBlockChainStatus"
 
   def receive() = {
     case getNewBlock() => {
       http.singleRequest(HttpRequest(uri = getBlockURI)).pipeTo(self)
     }
-    case updateBlockChainStatus() => {
-      http.singleRequest(HttpRequest(uri = getStatusURI)).pipeTo(self)      
-    }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          val jsonResponse = parse(body.utf8String)
-          jsonResponse \ "cumulativeDifficulty" match {
-            case JString(difficulty) => {
-              Global.difficulty = jsonResponse.extract[Difficulty]
-            }
-            case _ => {
-              Global.miningInfo = jsonResponse.extract[MiningInfo]
-            }  
-          }
+          Global.miningInfo = parse(body.utf8String).extract[MiningInfo]  
         }
       } 
     case resp @ HttpResponse(code, _, _, _) =>
