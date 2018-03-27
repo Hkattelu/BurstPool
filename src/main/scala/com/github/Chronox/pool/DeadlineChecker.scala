@@ -15,14 +15,9 @@ object DeadlineChecker {
   val HASH_CAP = 4096;
   
   val shabal = new Shabal256()
-  var currentBestDeadline: BigInteger = BigInteger.valueOf(0)
 
-  def verifyNonce(accountId: Long, nonce: Long): BigInteger = {
+  def nonceToDeadline(accountId: Long, nonce: Long): BigInteger = {
     return getDeadline(generatePlot(accountId, nonce), getScoopNum())
-  }
-
-  def isBestDeadline(deadline: BigInteger): Boolean = {
-    return deadline.compareTo(currentBestDeadline) <= 0
   }
 
   def generatePlot(accountId: Long, nonce: Long): Array[Byte] = {
@@ -80,7 +75,6 @@ object DeadlineChecker {
     shabal.reset()
     shabal.update(seedBuffer.array())
     val generationHash = new BigInteger(1,shabal.digest())
-    println("Finished scoop num")
     return generationHash.mod(
       BigInteger.valueOf(SCOOPS_PER_PLOT)).intValue()
   }

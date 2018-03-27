@@ -1,6 +1,5 @@
 package com.github.Chronox.pool.actors
 
-
 import com.github.Chronox.pool.Global
 import com.github.Chronox.pool.Config
 
@@ -39,7 +38,12 @@ class MiningInfoUpdater extends Actor with ActorLogging {
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          Global.miningInfo = parse(body.utf8String).extract[MiningInfo]  
+          val temp = parse(body.utf8String).extract[MiningInfo]
+          if(temp.generationSignature != Global.miningInfo.generationSignature){
+            Global.miningInfo = temp
+            Global.deadlineSubmitter ! ResetBestDeadline()
+          }
+
         }
       } 
     case resp @ HttpResponse(code, _, _, _) =>

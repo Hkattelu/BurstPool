@@ -17,10 +17,11 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
   Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
   Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
+  Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
 
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
-  addServlet(classOf[BurstServlet], "/burst")
+  addServlet(new BurstServlet(system), "/burst")
 
   test("All servlets up and running"){
     get("/"){
@@ -48,13 +49,6 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     get("/burst", Map("requestType" -> "getMiningInfo")){
       status should equal (200)
       body should include ("generationSignature")
-    }
-  }
-
-  test("Getting Blockchain Difficulty"){
-    get("/burst", Map("requestType" -> "getDifficulty")){
-      status should equal (200)
-      body should include ("cumulativeDifficulty")
     }
   }
 

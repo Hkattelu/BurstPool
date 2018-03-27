@@ -12,6 +12,7 @@ object Config {
   var HISTORIC_BLOCK_SHARE: Double = 0.0
   var FEE_ADDRESS: String = ""
   var BAN_TIME: Int = 0
+  var DAYS_UNTIL_INACTIVE: Int = 0
   var POOL_STRATEGY: String = ""
   var TARGET_DEADLINE: BigInteger = BigInteger.valueOf(0L)
 
@@ -33,18 +34,28 @@ object Config {
         return false
       }
       case Some(elements: Map[String, Any]) => {
-        NODE_ADDRESS = elements("NODE_ADDRESS").asInstanceOf[String]
-        PRICE_ADDRESS = elements("PRICE_ADDRESS").asInstanceOf[String]
-        POOL_FEE = elements("POOL_FEE").asInstanceOf[String].toDouble
+        NODE_ADDRESS = 
+          elements.getOrElse("NODE_ADDRESS", "").asInstanceOf[String]
+        PRICE_ADDRESS = 
+          elements.getOrElse("PRICE_ADDRESS", "").asInstanceOf[String]
+        POOL_FEE = 
+          elements.getOrElse("POOL_FEE", 0.0).asInstanceOf[String].toDouble
         CURRENT_BLOCK_SHARE = 
-          elements("CURRENT_BLOCK_SHARE").asInstanceOf[String].toDouble
+          elements.getOrElse("CURRENT_BLOCK_SHARE", 0.0).asInstanceOf[String]
+          .toDouble
         HISTORIC_BLOCK_SHARE = 
-          elements("HISTORIC_BLOCK_SHARE").asInstanceOf[String].toDouble
-        FEE_ADDRESS = elements("FEE_ADDRESS").asInstanceOf[String]
-        BAN_TIME = elements("BAN_TIME").asInstanceOf[String].toInt
-        POOL_STRATEGY = elements("POOL_STRATEGY").asInstanceOf[String]
+          elements.getOrElse("HISTORIC_BLOCK_SHARE", 0.0).asInstanceOf[String]
+          .toDouble
+        FEE_ADDRESS = elements.getOrElse("FEE_ADDRESS", "").asInstanceOf[String]
+        BAN_TIME = elements.getOrElse("BAN_TIME", 0).asInstanceOf[String].toInt
+        DAYS_UNTIL_INACTIVE = 
+          elements.getOrElse("DAYS_UNTIL_INACTIVE", 5).asInstanceOf[String]
+          .toInt
+        POOL_STRATEGY = 
+          elements.getOrElse("POOL_STRATEGY", "").asInstanceOf[String]
         TARGET_DEADLINE = new BigInteger(
-          elements("TARGET_DEADLINE").asInstanceOf[String], 10)
+          elements.getOrElse("TARGET_DEADLINE", BigInteger.valueOf(0L))
+          .asInstanceOf[String], 10)
         return true
       }
     }

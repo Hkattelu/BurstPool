@@ -1,5 +1,4 @@
 package com.github.Chronox.pool.db
-
 import java.time.LocalDateTime
 
 class User (
@@ -9,7 +8,7 @@ class User (
   var lastSubmitTime: LocalDateTime,
   var pendingBURST: BigDecimal,
   var payedBURST: BigDecimal,
-  var reported_TB: String,
+  var reported_TB: BigDecimal,
   var miner_type: String,
   ) {
   def this() = this(0L, null, false, null, 0.0, 0.0, null, null)
