@@ -13,7 +13,7 @@ import net.liftweb.json._
 import java.time.LocalDateTime
 
 case class getNewBlock()
-case class MiningInfo(generationSignature:String,
+case class MiningInfo(generationSignature:String, block: String,
   baseTarget:String, height: Long, blockReward: String,
   generator: String, generatorRS: String,
   numberOfTransactions: String)
@@ -43,11 +43,10 @@ class MiningInfoUpdater extends Actor with ActorLogging {
             Global.miningInfo = temp
             Global.deadlineSubmitter ! ResetBestDeadline()
           }
-
         }
       } 
     case resp @ HttpResponse(code, _, _, _) =>
-      log.info("Request failed, response code: " + code)
+      log.error("Request failed, response code: " + code)
       resp.discardEntityBytes()
   }
 }

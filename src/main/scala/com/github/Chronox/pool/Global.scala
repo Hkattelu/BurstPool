@@ -20,6 +20,6 @@ object Global {
 
   var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE
   var miningInfo: MiningInfo = MiningInfo(
-    null, null, 0L, null, null, null, null)
+    null, null, null, 0L, null, null, null, null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 }

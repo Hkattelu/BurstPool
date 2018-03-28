@@ -19,6 +19,7 @@ import java.time.LocalDateTime
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
 import java.lang.Long
+import java.math.BigInteger
 
 class BurstServlet(system: ActorSystem) extends ScalatraServlet
 with JacksonJsonSupport with FutureSupport {
@@ -48,11 +49,8 @@ with JacksonJsonSupport with FutureSupport {
                 Global.userManager.addUser(ip, accId)
               val user: User = Global.userManager.getUser(ip)
               Global.poolStatistics.incrementValidNonces()
-              if(deadline.compareTo(Global.currentBestDeadline) <= 0){
-                Global.deadlineSubmitter ! ResetBestDeadline()
+              if(deadline.compareTo(Global.currentBestDeadline) <= 0)
                 Global.deadlineSubmitter ! SubmitNonce(accId, nonce, deadline)
-                Global.rewardManager.updateRewardShares(user, deadline)
-              }
             } else {
               Global.userManager.banUser(ip, LocalDateTime.now())
               Global.poolStatistics.incrementBadNonces()
