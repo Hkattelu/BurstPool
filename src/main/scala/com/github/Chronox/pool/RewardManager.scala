@@ -8,14 +8,19 @@ import java.math.BigInteger
 
 object RewardManager {
 
-  var pendingPayments = scala.collection.mutable.Map[User, List[Share]]()
-  var currentBlockPayments = scala.collection.mutable.Map[User, Share]()
+  var currentBlockDeadlines = scala.collection.mutable.Map[User, BigInteger]()
+
+  var last500Shares = scala.collection.mutable.Map[User, List[Share]]()
+  var currentBlockShares = scala.collection.mutable.Map[User, Share]()
 
   // Utilize blockreward value to calculate splits
 
-  def updateRewardShares(accId: Long, blockId: BigInteger,
-    nonce: Long, deadline: BigInteger) {
+  def updateRewardShares(accId: Long,blockId: BigInteger,deadline: BigInteger) {
 
+  }
+
+  def dumpCurrentBlockShares() {
+    
   }
 
   def calculateRewardPercent(deadline: BigInteger): Double = {

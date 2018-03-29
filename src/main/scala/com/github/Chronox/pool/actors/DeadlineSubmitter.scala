@@ -52,9 +52,8 @@ class DeadlineSubmitter extends Actor with ActorLogging {
               log.info("Deadline successfully submitted")
               if(deadline.compareTo(Global.currentBestDeadline) <= 0){
                 Global.currentBestDeadline = deadline
-                Global.rewardManager.updateRewardShares(
-                  accountId, new BigInteger(Global.miningInfo.block, 10),
-                  nonce, deadline)
+                Global.rewardManager.updateRewardShares(accountId, 
+                  new BigInteger(Global.miningInfo.block, 10), deadline)
               }
             } else {
               log.error("Response Deadline did not match calculated deadline")

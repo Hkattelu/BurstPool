@@ -18,6 +18,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
   Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
   Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
+  Global.deadlineChecker = system.actorOf(Props[DeadlineChecker])
 
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")

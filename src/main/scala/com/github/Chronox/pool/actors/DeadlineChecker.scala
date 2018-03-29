@@ -1,11 +1,20 @@
-package com.github.Chronox.pool
+package com.github.Chronox.pool.actors
+
+import com.github.Chronox.pool.Global
+
+import akka.actor.{ Actor, ActorLogging }
+import akka.http.scaladsl.model._
+import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
+import scala.util.{ Failure, Success }
+import scala.concurrent.duration._
 
 import hash.Shabal256
-
 import java.math.BigInteger
 import java.nio.ByteBuffer
 
-object DeadlineChecker {
+case class nonceToDeadline(accountId: Long, nonce: Long)
+
+class DeadlineChecker extends Actor with ActorLogging {
 
   val HASH_SIZE = 32;
   val HASHES_PER_SCOOP = 2;
@@ -14,13 +23,15 @@ object DeadlineChecker {
   val PLOT_SIZE = SCOOPS_PER_PLOT * SCOOP_SIZE;
   val HASH_CAP = 4096;
   
-  val shabal = new Shabal256()
-
-  def nonceToDeadline(accountId: Long, nonce: Long): BigInteger = {
-    return getDeadline(generatePlot(accountId, nonce), getScoopNum())
+  def receive() = {
+    case nonceToDeadline(accountId: Long, nonce: Long) => {
+      val shabal = new Shabal256()
+      sender ! getDeadline(generatePlot(accountId, nonce, shabal), 
+        getScoopNum(shabal), shabal)
+    }
   }
 
-  def generatePlot(accountId: Long, nonce: Long): Array[Byte] = {
+  def generatePlot(accountId: Long, nonce: Long, shabal: Shabal256): Array[Byte] = {
     shabal.reset()
     val seedBuffer = ByteBuffer.allocate(16) // 8 byte accId + 8 byte nonce
     seedBuffer.putLong(accountId)
@@ -48,7 +59,7 @@ object DeadlineChecker {
     return plot
   }
 
-  def getDeadline(plot: Array[Byte], scoopNum: Int): BigInteger = {
+  def getDeadline(plot: Array[Byte], scoopNum: Int, shabal: Shabal256): BigInteger = {
     shabal.reset()
     val genSigBuffer = ByteBuffer.allocate(32)
     val genSigBytes = new BigInteger(
@@ -64,7 +75,7 @@ object DeadlineChecker {
     return hit.divide(BigInteger.valueOf(Global.miningInfo.baseTarget.toLong))
   }
 
-  def getScoopNum(): Int = {
+  def getScoopNum(shabal: Shabal256): Int = {
     val seedBuffer = ByteBuffer.allocate(40) // 32 byte gensig + 8 byte height
 
     //Race condition: Fails if the mining info response hasn't been received yet

@@ -13,10 +13,10 @@ object Global {
   var burstPriceChecker: ActorRef = null
   var miningInfoUpdater: ActorRef = null
   var deadlineSubmitter: ActorRef = null
+  var deadlineChecker: ActorRef = null
   val userManager = UserManager
   val rewardManager = RewardManager
   val poolStatistics = PoolStatistics
-  val deadlineChecker = DeadlineChecker
 
   var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE
   var miningInfo: MiningInfo = MiningInfo(
