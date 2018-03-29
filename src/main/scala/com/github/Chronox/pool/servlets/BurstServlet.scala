@@ -53,6 +53,9 @@ with JacksonJsonSupport with FutureSupport {
               }
             }
             if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
+              Global.poolStatistics.incrementValidNonces()
+
+              // Add user if we haven't seen this IP before
               val containsUserFuture: Future[Any] = 
                 Global.userManager ? containsUser(ip)
               containsUserFuture onSuccess {
@@ -61,12 +64,15 @@ with JacksonJsonSupport with FutureSupport {
                     Global.userManager ! addUser(ip, accId)
                 }
               }
-              var user: User = null
-              val userFuture: Future[Any] = Global.userManager ? getUser(ip)
-              userFuture onSuccess {
-                case Some(result) => {user = result.asInstanceOf[User]}
-              }
-              Global.poolStatistics.incrementValidNonces()
+
+              // Get the user from the manager
+              //var user: User = null
+              //val userFuture: Future[Any] = Global.userManager ? getUser(ip)
+              //userFuture onSuccess {
+              //  case Some(result) => {user = result.asInstanceOf[User]}
+              //}
+
+              // Submit nonce if it is better than the pool's currentbest
               if(deadline.compareTo(Global.currentBestDeadline) <= 0)
                 Global.deadlineSubmitter ! submitNonce(accId, nonce, deadline)
                 Global.userManager ! updateSubmitTime(ip)
