@@ -29,7 +29,7 @@ class StateUpdater extends Actor with ActorLogging {
     case StateTick() => {
       Global.burstPriceChecker ! updateBurstPriceInfo()
       Global.miningInfoUpdater ! getNewBlock()
-      Global.userManager.refreshUsers()
+      Global.userManager ! refreshUsers()
     }
   }
 }

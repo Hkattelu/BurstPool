@@ -4,6 +4,12 @@ import com.github.Chronox.pool._
 import com.github.Chronox.pool.actors._
 import com.github.Chronox.pool.servlets._
 import com.github.Chronox.pool.db._
+import akka.pattern.ask
+import akka.util.Timeout
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 import org.scalatra.test.scalatest._
 import java.time.LocalDateTime
 import org.scalatest.FunSuiteLike
@@ -12,6 +18,7 @@ import javax.servlet.ServletContext
 
 class PoolServletTests extends ScalatraSuite with FunSuiteLike{
 
+
   Config.init()
   val system = ActorSystem()
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
@@ -19,11 +26,15 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
   Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
   Global.deadlineChecker = system.actorOf(Props[DeadlineChecker])
+  Global.userManager = system.actorOf(Props[UserManager])
 
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
   addServlet(new BurstServlet(system), "/burst")
 
+  protected implicit def executor: ExecutionContext = system.dispatcher
+  protected implicit val timeout: Timeout = 2 seconds
+  
   test("All servlets up and running"){
     get("/"){
       status should equal (200)
@@ -77,16 +88,24 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   }
 
   test("Banning a user"){
-    Global.userManager.banUser("1", LocalDateTime.now().plusSeconds(2))
-    Global.userManager.addUser("1", 2) should equal (false)
-    Global.userManager.containsUser("1") should equal (false)
+    Global.userManager ! banUser("1", LocalDateTime.now().plusSeconds(2))
+    Global.userManager ! addUser("1", 2)
+    (Global.userManager ? containsUser("1")) onSuccess {
+      case Some(result) => {
+        result.asInstanceOf[Boolean] should equal (false)
+      }
+    }
   }
 
   test("Unbanning a user"){
-    Global.userManager.banUser("1", LocalDateTime.now().minusSeconds(1))
-    Global.userManager.refreshUsers()
-    Global.userManager.addUser("1", 2) should equal (true)
-    Global.userManager.containsUser("1") should equal (true)
+    Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
+    Global.userManager ! refreshUsers()
+    Global.userManager ! addUser("1", 2)
+    (Global.userManager ? containsUser("1")) onSuccess {
+      case Some(result) => {
+        result.asInstanceOf[Boolean] should equal (true)
+      }
+    }
   }
 
   test("Overwriting previous best nonce"){

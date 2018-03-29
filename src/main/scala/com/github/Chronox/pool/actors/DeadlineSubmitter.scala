@@ -15,8 +15,8 @@ import net.liftweb.json._
 
 import java.math.BigInteger
 
-case class ResetBestDeadline()
-case class SubmitNonce(accountId: Long, nonce: Long, deadline: BigInteger)
+case class resetBestDeadline()
+case class submitNonce(accountId: Long, nonce: Long, deadline: BigInteger)
 case class SubmitResult(result: String, deadline: String)
 
 class DeadlineSubmitter extends Actor with ActorLogging {
@@ -37,10 +37,10 @@ class DeadlineSubmitter extends Actor with ActorLogging {
   }
 
   def receive() = {
-    case ResetBestDeadline() => {
+    case resetBestDeadline() => {
       Global.currentBestDeadline = Config.TARGET_DEADLINE
     }
-    case SubmitNonce(accountId: Long, nonce: Long, deadline: BigInteger) => {
+    case submitNonce(accountId: Long, nonce: Long, deadline: BigInteger) => {
       if(isBestDeadline(deadline)){
         http.singleRequest(
           HttpRequest(method = PUT,

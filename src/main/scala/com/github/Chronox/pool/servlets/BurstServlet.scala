@@ -10,12 +10,11 @@ import akka.pattern.ask
 import akka.util.Timeout
 import org.scalatra.{Accepted, FutureSupport, ScalatraServlet}
 import scala.util.{ Failure, Success }
-
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 import org.scalatra._
-import scala.concurrent.duration._
 import java.time.LocalDateTime
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._ 
@@ -46,20 +45,34 @@ with JacksonJsonSupport with FutureSupport {
             
             var deadline: BigInteger = 
               Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
-            val future = Global.deadlineChecker ? nonceToDeadline(accId, nonce)
-            future onComplete {
-              case Success(result) => {deadline = result.asInstanceOf[BigInteger]}
-              case Failure(error) => {println(error.toString())}
+            val deadlineFuture: Future[Any] = 
+              Global.deadlineChecker ? nonceToDeadline(accId, nonce)
+            deadlineFuture onSuccess {
+              case Some(result) => {
+                deadline = result.asInstanceOf[BigInteger]
+              }
             }
             if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
-              if(!(Global.userManager containsUser ip))
-                Global.userManager.addUser(ip, accId)
-              val user: User = Global.userManager.getUser(ip)
+              val containsUserFuture: Future[Any] = 
+                Global.userManager ? containsUser(ip)
+              containsUserFuture onSuccess {
+                case Some(result) => {
+                  if(!result.asInstanceOf[Boolean])
+                    Global.userManager ! addUser(ip, accId)
+                }
+              }
+              var user: User = null
+              val userFuture: Future[Any] = Global.userManager ? getUser(ip)
+              userFuture onSuccess {
+                case Some(result) => {user = result.asInstanceOf[User]}
+              }
               Global.poolStatistics.incrementValidNonces()
               if(deadline.compareTo(Global.currentBestDeadline) <= 0)
-                Global.deadlineSubmitter ! SubmitNonce(accId, nonce, deadline)
+                Global.deadlineSubmitter ! submitNonce(accId, nonce, deadline)
+                Global.userManager ! updateSubmitTime(ip)
             } else {
-              Global.userManager.banUser(ip, LocalDateTime.now())
+              Global.userManager ! banUser(ip,
+                LocalDateTime.now().plusMinutes(Config.BAN_TIME))
               Global.poolStatistics.incrementBadNonces()
             }
           } catch {

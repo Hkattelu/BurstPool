@@ -31,48 +31,50 @@ class DeadlineChecker extends Actor with ActorLogging {
     }
   }
 
-  def generatePlot(accountId: Long, nonce: Long, shabal: Shabal256): Array[Byte] = {
-    shabal.reset()
-    val seedBuffer = ByteBuffer.allocate(16) // 8 byte accId + 8 byte nonce
-    seedBuffer.putLong(accountId)
-    seedBuffer.putLong(nonce)
-
-    val seed = seedBuffer.array()
-    val gendata = new Array[Byte](PLOT_SIZE + seed.length)
-    System.arraycopy(seed, 0, gendata, PLOT_SIZE, seed.length)
-    for{i <- PLOT_SIZE/HASH_SIZE until 0} {
+  def generatePlot(accountId: Long, nonce: Long, 
+    shabal: Shabal256): Array[Byte] = {
       shabal.reset()
-      var len = PLOT_SIZE + seed.length - i*HASH_SIZE
-      if(len > HASH_CAP) {
-        len = HASH_CAP
+      val seedBuffer = ByteBuffer.allocate(16) // 8 byte accId + 8 byte nonce
+      seedBuffer.putLong(accountId)
+      seedBuffer.putLong(nonce)
+
+      val seed = seedBuffer.array()
+      val gendata = new Array[Byte](PLOT_SIZE + seed.length)
+      System.arraycopy(seed, 0, gendata, PLOT_SIZE, seed.length)
+      for{i <- PLOT_SIZE/HASH_SIZE until 0} {
+        shabal.reset()
+        var len = PLOT_SIZE + seed.length - i*HASH_SIZE
+        if(len > HASH_CAP) {
+          len = HASH_CAP
+        }
+        shabal.update(gendata, HASH_SIZE*i, len)
+        shabal.digest(gendata, HASH_SIZE*(i - 1), HASH_SIZE)
       }
-      shabal.update(gendata, HASH_SIZE*i, len)
-      shabal.digest(gendata, HASH_SIZE*(i - 1), HASH_SIZE)
-    }
-    shabal.reset()
-    shabal.update(gendata)
-    val finalhash = shabal.digest()
-    var plot = new Array[Byte](PLOT_SIZE)
-    for{i <- 0 until PLOT_SIZE} {
-      plot(i) = (gendata(i) ^ finalhash(i % HASH_SIZE)).asInstanceOf[Byte]
-    }
-    return plot
+      shabal.reset()
+      shabal.update(gendata)
+      val finalhash = shabal.digest()
+      var plot = new Array[Byte](PLOT_SIZE)
+      for{i <- 0 until PLOT_SIZE} {
+        plot(i) = (gendata(i) ^ finalhash(i % HASH_SIZE)).asInstanceOf[Byte]
+      }
+      return plot
   }
 
-  def getDeadline(plot: Array[Byte], scoopNum: Int, shabal: Shabal256): BigInteger = {
-    shabal.reset()
-    val genSigBuffer = ByteBuffer.allocate(32)
-    val genSigBytes = new BigInteger(
-      Global.miningInfo.generationSignature, 16).toByteArray
-    genSigBuffer.put(genSigBytes)
+  def getDeadline(plot: Array[Byte], scoopNum: Int, 
+    shabal: Shabal256): BigInteger = {
+      shabal.reset()
+      val genSigBuffer = ByteBuffer.allocate(32)
+      val genSigBytes = new BigInteger(
+        Global.miningInfo.generationSignature, 16).toByteArray
+      genSigBuffer.put(genSigBytes)
 
-    shabal.update(genSigBuffer.array())
-    shabal.update(plot, scoopNum * SCOOP_SIZE, SCOOP_SIZE);
-    val hash = shabal.digest()
+      shabal.update(genSigBuffer.array())
+      shabal.update(plot, scoopNum * SCOOP_SIZE, SCOOP_SIZE);
+      val hash = shabal.digest()
 
-    val hit = new BigInteger(1, Array[Byte](hash(7), hash(6), hash(5), hash(4),
-      hash(3), hash(2), hash(1), hash(0)))
-    return hit.divide(BigInteger.valueOf(Global.miningInfo.baseTarget.toLong))
+      val hit = new BigInteger(1, Array[Byte](hash(7), hash(6), hash(5), 
+        hash(4), hash(3), hash(2), hash(1), hash(0)))
+      return hit.divide(BigInteger.valueOf(Global.miningInfo.baseTarget.toLong))
   }
 
   def getScoopNum(shabal: Shabal256): Int = {

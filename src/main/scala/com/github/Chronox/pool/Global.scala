@@ -14,7 +14,7 @@ object Global {
   var miningInfoUpdater: ActorRef = null
   var deadlineSubmitter: ActorRef = null
   var deadlineChecker: ActorRef = null
-  val userManager = UserManager
+  var userManager : ActorRef = null
   val rewardManager = RewardManager
   val poolStatistics = PoolStatistics
 

@@ -41,7 +41,7 @@ class MiningInfoUpdater extends Actor with ActorLogging {
           val temp = parse(body.utf8String).extract[MiningInfo]
           if(temp.generationSignature != Global.miningInfo.generationSignature){
             Global.miningInfo = temp
-            Global.deadlineSubmitter ! ResetBestDeadline()
+            Global.deadlineSubmitter ! resetBestDeadline()
           }
         }
       } 
