@@ -8,14 +8,13 @@ import scala.collection.concurrent.TrieMap
 import java.math.BigInteger
 
 object Global {
-
   var stateUpdater: ActorRef = null
   var burstPriceChecker: ActorRef = null
   var miningInfoUpdater: ActorRef = null
   var deadlineSubmitter: ActorRef = null
   var deadlineChecker: ActorRef = null
-  var userManager : ActorRef = null
-  val rewardManager = RewardManager
+  var userManager: ActorRef = null
+  var rewardManager: ActorRef = null
   val poolStatistics = PoolStatistics
 
   var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE
