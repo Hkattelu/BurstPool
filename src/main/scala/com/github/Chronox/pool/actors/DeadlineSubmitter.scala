@@ -2,6 +2,7 @@ package com.github.Chronox.pool.actors
 
 import com.github.Chronox.pool.Global
 import com.github.Chronox.pool.Config
+import com.github.Chronox.pool.db.User
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
@@ -16,7 +17,7 @@ import net.liftweb.json._
 import java.math.BigInteger
 
 case class resetBestDeadline()
-case class submitNonce(accountId: Long, nonce: Long, deadline: BigInteger)
+case class submitNonce(user: User, nonce: Long, deadline: BigInteger)
 case class SubmitResult(result: String, deadline: String)
 
 class DeadlineSubmitter extends Actor with ActorLogging {
@@ -40,11 +41,11 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     case resetBestDeadline() => {
       Global.currentBestDeadline = Config.TARGET_DEADLINE
     }
-    case submitNonce(accountId: Long, nonce: Long, deadline: BigInteger) => {
+    case submitNonce(user: User, nonce: Long, deadline: BigInteger) => {
       if(isBestDeadline(deadline)){
         http.singleRequest(
           HttpRequest(method = PUT,
-           uri = baseSubmitURI+"&accountId="+accountId+"&nonce="+nonce)
+           uri = baseSubmitURI+"&accountId="+user.id+"&nonce="+nonce)
         ) onComplete {
           case Success(res: HttpResponse) => {
             val result = parse(res.entity.toString()).extract[SubmitResult]
@@ -52,8 +53,8 @@ class DeadlineSubmitter extends Actor with ActorLogging {
               log.info("Deadline successfully submitted")
               if(deadline.compareTo(Global.currentBestDeadline) <= 0){
                 Global.currentBestDeadline = deadline
-                Global.rewardManager ! updateRewardShares(accountId, 
-                  new BigInteger(Global.miningInfo.block, 10), deadline)
+                Global.rewardManager ! addShare(user, 
+                  new BigInteger(Global.miningInfo.block, 10), nonce, deadline)
               }
             } else {
               log.error("Response Deadline did not match calculated deadline")

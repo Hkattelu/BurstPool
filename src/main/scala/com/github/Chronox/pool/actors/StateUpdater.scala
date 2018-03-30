@@ -1,6 +1,7 @@
 package com.github.Chronox.pool.actors
 
 import com.github.Chronox.pool.Global
+import com.github.Chronox.pool.Config
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
@@ -11,6 +12,7 @@ import scala.concurrent.duration._
 import net.liftweb.json._
 
 case class StateTick()
+case class PayoutUsers()
 
 class StateUpdater extends Actor with ActorLogging {
 
@@ -22,7 +24,9 @@ class StateUpdater extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   override def preStart() {
-    context.system.scheduler.schedule(0 seconds, 10 seconds, self, StateTick())
+    context.system.scheduler.schedule(0 seconds, 3 seconds, self, StateTick())
+    context.system.scheduler.schedule(
+      0 seconds, Config.PAY_TIME hours, self, PayoutUsers())
   }
 
   def receive() = {
@@ -31,5 +35,6 @@ class StateUpdater extends Actor with ActorLogging {
       Global.miningInfoUpdater ! getNewBlock()
       Global.userManager ! refreshUsers()
     }
+    case PayoutShares() => Global.userPayout ! PayoutShares()
   }
 }

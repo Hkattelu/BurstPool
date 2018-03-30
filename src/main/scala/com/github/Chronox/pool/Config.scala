@@ -12,6 +12,8 @@ object Config {
   var HISTORIC_BLOCK_SHARE: Double = 0.0
   var FEE_ADDRESS: String = ""
   var BAN_TIME: Int = 0
+  var PAY_TIME: Int = 0
+  var ACCOUNT_ID: String = ""
   var DAYS_UNTIL_INACTIVE: Int = 0
   var POOL_STRATEGY: String = ""
   var TARGET_DEADLINE: BigInteger = BigInteger.valueOf(0L)
@@ -48,6 +50,9 @@ object Config {
           .toDouble
         FEE_ADDRESS = elements.getOrElse("FEE_ADDRESS", "").asInstanceOf[String]
         BAN_TIME = elements.getOrElse("BAN_TIME", 0).asInstanceOf[String].toInt
+        PAY_TIME = elements.getOrElse("PAY_TIME", 0).asInstanceOf[String].toInt
+        ACCOUNT_ID = 
+          elements.getOrElse("ACCOUNT_ID", "").asInstanceOf[String]
         DAYS_UNTIL_INACTIVE = 
           elements.getOrElse("DAYS_UNTIL_INACTIVE", 5).asInstanceOf[String]
           .toInt

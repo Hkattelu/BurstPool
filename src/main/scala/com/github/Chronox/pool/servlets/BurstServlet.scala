@@ -66,15 +66,15 @@ with JacksonJsonSupport with FutureSupport {
               }
 
               // Get the user from the manager
-              //var user: User = null
-              //val userFuture: Future[Any] = Global.userManager ? getUser(ip)
-              //userFuture onSuccess {
-              //  case Some(result) => {user = result.asInstanceOf[User]}
-              //}
+              var user: User = null
+              val userFuture: Future[Any] = Global.userManager ? getUser(ip)
+              userFuture onSuccess {
+                case Some(result) => {user = result.asInstanceOf[User]}
+              }
 
               // Submit nonce if it is better than the pool's currentbest
               if(deadline.compareTo(Global.currentBestDeadline) <= 0)
-                Global.deadlineSubmitter ! submitNonce(accId, nonce, deadline)
+                Global.deadlineSubmitter ! submitNonce(user, nonce, deadline)
                 Global.userManager ! updateSubmitTime(ip)
             } else {
               Global.userManager ! banUser(ip,

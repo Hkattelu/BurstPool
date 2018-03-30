@@ -16,6 +16,7 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
   Global.deadlineChecker = system.actorOf(Props[DeadlineChecker])
   Global.userManager = system.actorOf(Props[UserManager])
   Global.rewardManager = system.actorOf(Props[RewardManager])
+  Global.userPayout = system.actorOf(Props[UserPayout])
 
   override def init(context: ServletContext) {
     if(!Config.init()) return

@@ -11,6 +11,7 @@ import akka.util.ByteString
 import scala.concurrent.duration._
 import net.liftweb.json._
 import java.time.LocalDateTime
+import java.math.BigInteger
 
 case class getNewBlock()
 case class MiningInfo(generationSignature:String, block: String,
@@ -40,6 +41,12 @@ class MiningInfoUpdater extends Actor with ActorLogging {
         {
           val temp = parse(body.utf8String).extract[MiningInfo]
           if(temp.generationSignature != Global.miningInfo.generationSignature){
+            if(temp.generator == Config.ACCOUNT_ID){
+              Global.rewardManager ! queueCurrentShares(
+                new BigInteger(temp.block))
+            } else {
+              Global.rewardManager ! dumpCurrentShares()
+            }
             Global.miningInfo = temp
             Global.deadlineSubmitter ! resetBestDeadline()
           }
