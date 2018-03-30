@@ -37,6 +37,7 @@ class UserManager extends Actor with ActorLogging {
         newUser.id = accountId
         newUser.reported_TB = 0.0
         newUser.lastSubmitTime = LocalDateTime.now()
+        newUser.lastSubmitHeight = Global.miningInfo.height
         activeUsers += (ip_address->newUser)
         Global.poolStatistics.incrementActiveUsers()
         Global.poolStatistics.addActiveTB(newUser.reported_TB)
@@ -57,8 +58,7 @@ class UserManager extends Actor with ActorLogging {
 
       prevNum = activeUsers.size
       activeUsers.retain((k,v) => {
-        v.lastSubmitTime isBefore (
-          LocalDateTime.now().minusDays(Config.DAYS_UNTIL_INACTIVE))
+        v.lastSubmitHeight > (Global.miningInfo.height - Config.MIN_HEIGHT_DIFF)
         })
       Global.poolStatistics.decrementActiveUsersBy(activeUsers.size - prevNum)
 

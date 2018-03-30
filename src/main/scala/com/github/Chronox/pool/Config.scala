@@ -15,7 +15,7 @@ object Config {
   var PAY_TIME: Int = 0
   var ACCOUNT_ID: String = ""
   var SECRET_PHRASE: String = ""
-  var DAYS_UNTIL_INACTIVE: Int = 0
+  var MIN_HEIGHT_DIFF: Int = 0
   var POOL_STRATEGY: String = ""
   var TARGET_DEADLINE: BigInteger = BigInteger.valueOf(0L)
 
@@ -38,33 +38,22 @@ object Config {
       }
       case Some(map) => {
         val elements = map.asInstanceOf[Map[String, String]]
-        NODE_ADDRESS = 
-          elements.getOrElse("NODE_ADDRESS", "").asInstanceOf[String]
-        PRICE_ADDRESS = 
-          elements.getOrElse("PRICE_ADDRESS", "").asInstanceOf[String]
-        POOL_FEE = 
-          elements.getOrElse("POOL_FEE", 0.02).asInstanceOf[String].toDouble
+        NODE_ADDRESS = elements.getOrElse("NODE_ADDRESS", "")
+        PRICE_ADDRESS = elements.getOrElse("PRICE_ADDRESS", "")
+        POOL_FEE = elements.getOrElse("POOL_FEE", "0.02").toDouble
         CURRENT_BLOCK_SHARE = 
-          elements.getOrElse("CURRENT_BLOCK_SHARE", 0.18).asInstanceOf[String]
-          .toDouble
+          elements.getOrElse("CURRENT_BLOCK_SHARE", "0.18").toDouble
         HISTORIC_BLOCK_SHARE = 
-          elements.getOrElse("HISTORIC_BLOCK_SHARE", 0.80).asInstanceOf[String]
-          .toDouble
-        FEE_ADDRESS = elements.getOrElse("FEE_ADDRESS", "").asInstanceOf[String]
-        BAN_TIME = elements.getOrElse("BAN_TIME", 3).asInstanceOf[String].toInt
-        PAY_TIME = elements.getOrElse("PAY_TIME", 5).asInstanceOf[String].toInt
-        ACCOUNT_ID = 
-          elements.getOrElse("ACCOUNT_ID", "").asInstanceOf[String]
-        SECRET_PHRASE = 
-          elements.getOrElse("SECRET_PHRASE", "").asInstanceOf[String]
-        DAYS_UNTIL_INACTIVE = 
-          elements.getOrElse("DAYS_UNTIL_INACTIVE", 5).asInstanceOf[String]
-          .toInt
-        POOL_STRATEGY = 
-          elements.getOrElse("POOL_STRATEGY", "").asInstanceOf[String]
+          elements.getOrElse("HISTORIC_BLOCK_SHARE", "0.80").toDouble
+        FEE_ADDRESS = elements.getOrElse("FEE_ADDRESS", "")
+        BAN_TIME = elements.getOrElse("BAN_TIME", "3").toInt
+        PAY_TIME = elements.getOrElse("PAY_TIME", "5").toInt
+        ACCOUNT_ID = elements.getOrElse("ACCOUNT_ID", "")
+        SECRET_PHRASE = elements.getOrElse("SECRET_PHRASE", "")
+        MIN_HEIGHT_DIFF = elements.getOrElse("MIN_HEIGHT_DIFF", "200").toInt
+        POOL_STRATEGY = elements.getOrElse("POOL_STRATEGY", "STANDARD")
         TARGET_DEADLINE = new BigInteger(
-          elements.getOrElse("TARGET_DEADLINE", BigInteger.valueOf(0L))
-          .asInstanceOf[String], 10)
+          elements.getOrElse("TARGET_DEADLINE", "2592000"))
         return true
       }
     }

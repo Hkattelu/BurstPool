@@ -14,6 +14,7 @@ import akka.util.ByteString
 import scala.concurrent.duration._
 import net.liftweb.json._
 
+import java.time.LocalDateTime
 import java.math.BigInteger
 
 case class resetBestDeadline()
@@ -51,6 +52,8 @@ class DeadlineSubmitter extends Actor with ActorLogging {
             val result = parse(res.entity.toString()).extract[SubmitResult]
             if(deadline == (new BigInteger(result.deadline, 10))){
               log.info("Deadline successfully submitted")
+              user.lastSubmitTime = LocalDateTime.now()
+              user.lastSubmitHeight = Global.miningInfo.height
               if(deadline.compareTo(Global.currentBestDeadline) <= 0){
                 Global.currentBestDeadline = deadline
                 // Can convert bigint to long because it's less than the target
