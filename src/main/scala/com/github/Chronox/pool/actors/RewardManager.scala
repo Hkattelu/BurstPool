@@ -15,7 +15,7 @@ import scala.collection.concurrent.TrieMap
 import java.math.BigInteger
 
 case class addShare(user: User, blockId: BigInteger,
-  nonce: Long, deadline: BigInteger)
+  nonce: Long, deadline: Long)
 case class dumpCurrentShares()
 case class queueCurrentShares(blockId: BigInteger)
 
@@ -24,7 +24,7 @@ class RewardManager extends Actor with ActorLogging {
 
   def receive() = {
     case addShare(user: User, blockId: BigInteger, 
-      nonce: Long, deadline: BigInteger) => {
+      nonce: Long, deadline: Long) => {
       val share: Share = new Share(user.id, blockId, nonce, deadline, false)
       if (currentShares contains user) currentShares(user) = share
       else currentShares += (user->share)

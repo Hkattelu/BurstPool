@@ -11,7 +11,7 @@ class User (
   var payedNQT: BigInteger,
   var reported_TB: BigDecimal,
   var miner_type: String,
-  ) {
+) {
   def this() = this(0L, null, false, null, 
     BigInteger.valueOf(0L), BigInteger.valueOf(0L), null, null)
 }
