@@ -31,7 +31,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
 
   val http = Http(context.system)
   val baseSubmitURI = (Config.NODE_ADDRESS + 
-    "/burst?requestType=submitNonce&secretPhrase=cryptoport")
+    "/burst?requestType=submitNonce&secretPhrase=" + Config.SECRET_PHRASE)
 
   def isBestDeadline(deadline: BigInteger): Boolean = {
     return deadline.compareTo(Global.currentBestDeadline) <= 0

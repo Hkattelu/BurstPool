@@ -14,6 +14,7 @@ object Config {
   var BAN_TIME: Int = 0
   var PAY_TIME: Int = 0
   var ACCOUNT_ID: String = ""
+  var SECRET_PHRASE: String = ""
   var DAYS_UNTIL_INACTIVE: Int = 0
   var POOL_STRATEGY: String = ""
   var TARGET_DEADLINE: BigInteger = BigInteger.valueOf(0L)
@@ -41,18 +42,20 @@ object Config {
         PRICE_ADDRESS = 
           elements.getOrElse("PRICE_ADDRESS", "").asInstanceOf[String]
         POOL_FEE = 
-          elements.getOrElse("POOL_FEE", 0.0).asInstanceOf[String].toDouble
+          elements.getOrElse("POOL_FEE", 0.02).asInstanceOf[String].toDouble
         CURRENT_BLOCK_SHARE = 
-          elements.getOrElse("CURRENT_BLOCK_SHARE", 0.0).asInstanceOf[String]
+          elements.getOrElse("CURRENT_BLOCK_SHARE", 0.18).asInstanceOf[String]
           .toDouble
         HISTORIC_BLOCK_SHARE = 
-          elements.getOrElse("HISTORIC_BLOCK_SHARE", 0.0).asInstanceOf[String]
+          elements.getOrElse("HISTORIC_BLOCK_SHARE", 0.80).asInstanceOf[String]
           .toDouble
         FEE_ADDRESS = elements.getOrElse("FEE_ADDRESS", "").asInstanceOf[String]
-        BAN_TIME = elements.getOrElse("BAN_TIME", 0).asInstanceOf[String].toInt
-        PAY_TIME = elements.getOrElse("PAY_TIME", 0).asInstanceOf[String].toInt
+        BAN_TIME = elements.getOrElse("BAN_TIME", 3).asInstanceOf[String].toInt
+        PAY_TIME = elements.getOrElse("PAY_TIME", 5).asInstanceOf[String].toInt
         ACCOUNT_ID = 
           elements.getOrElse("ACCOUNT_ID", "").asInstanceOf[String]
+        SECRET_PHRASE = 
+          elements.getOrElse("SECRET_PHRASE", "").asInstanceOf[String]
         DAYS_UNTIL_INACTIVE = 
           elements.getOrElse("DAYS_UNTIL_INACTIVE", 5).asInstanceOf[String]
           .toInt

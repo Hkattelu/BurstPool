@@ -21,9 +21,8 @@ case class updateSubmitTime(ip_address: String)
 
 class UserManager extends Actor with ActorLogging {
 
-  var activeUsers = scala.collection.concurrent.TrieMap[String, User]()
-  var bannedAddresses = 
-    scala.collection.concurrent.TrieMap[String, LocalDateTime]()
+  var activeUsers = TrieMap[String, User]()
+  var bannedAddresses = TrieMap[String, LocalDateTime]()
   var netActiveTB = 0.0
 
   def receive() = {

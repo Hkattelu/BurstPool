@@ -20,23 +20,18 @@ case class dumpCurrentShares()
 case class queueCurrentShares(blockId: BigInteger)
 
 class RewardManager extends Actor with ActorLogging {
-
-  var currentBlockShares = scala.collection.concurrent.TrieMap[User, Share]()
+  var currentShares = TrieMap[User, Share]()
 
   def receive() = {
     case addShare(user: User, blockId: BigInteger, 
       nonce: Long, deadline: BigInteger) => {
       val share: Share = new Share(user.id, blockId, nonce, deadline, false)
-      if (currentBlockShares contains user)
-        currentBlockShares(user) = share
-      else
-        currentBlockShares += (user->share)
+      if (currentShares contains user) currentShares(user) = share
+      else currentShares += (user->share)
     }
-    case dumpCurrentShares() => currentBlockShares.clear()
+    case dumpCurrentShares() => currentShares.clear()
     case queueCurrentShares(blockId: BigInteger) => {
-      var blockShares = List[Share]()
-      for ((k,v) <- currentBlockShares) {v :: blockShares}
-      Global.userPayout ! addShares(blockId, blockShares)
+      Global.userPayout ! addShares(blockId, currentShares.values.toList)
     }
   }
 }
