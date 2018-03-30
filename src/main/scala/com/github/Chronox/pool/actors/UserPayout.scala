@@ -40,13 +40,11 @@ class UserPayout extends Actor with ActorLogging {
   val baseBlockURI = Config.NODE_ADDRESS + "/burst?requestType=getBlock&block="
 
   def weightsToPercents(weights: Map[Long, Long]): Map[Long, Double] = {
-    var max = 0L
-    for((k,v) <- weights) if(max < v) max = v
-    val transformedWeights = 
-      weights.map{case (k,v) => (k, max/v)}.asInstanceOf[Map[Long, Double]]
-    var sum = 0.0
-    for((k,v) <- transformedWeights) sum += v
-    return transformedWeights.map{ case (k,v) => (k, v/sum)}
+    val inverseWeights = 
+      weights.map{case (k,v) => (k, 1/v)}.asInstanceOf[Map[Long, Double]]
+    var inverseSum = 0.0
+    for((k,v) <- inverseWeights) inverseSum += v
+    return inverseWeights.map{ case (k,v) => (k, v/inverseSum)}
   }
 
   def receive() = {

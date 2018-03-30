@@ -4,6 +4,7 @@ import java.math.BigInteger
 
 class User (
   var id: Long,
+  var lastSubmitHeight: Long,
   var nickName: String,
   var isActive: Boolean,
   var lastSubmitTime: LocalDateTime,
@@ -12,6 +13,6 @@ class User (
   var reported_TB: BigDecimal,
   var miner_type: String,
 ) {
-  def this() = this(0L, null, false, null, 
+  def this() = this(0L, 0L, null, false, null, 
     BigInteger.valueOf(0L), BigInteger.valueOf(0L), null, null)
 }
