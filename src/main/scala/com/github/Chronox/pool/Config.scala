@@ -36,7 +36,8 @@ object Config {
         println("Invalid Config")
         return false
       }
-      case Some(elements: Map[String, Any]) => {
+      case Some(map) => {
+        val elements = map.asInstanceOf[Map[String, String]]
         NODE_ADDRESS = 
           elements.getOrElse("NODE_ADDRESS", "").asInstanceOf[String]
         PRICE_ADDRESS = 

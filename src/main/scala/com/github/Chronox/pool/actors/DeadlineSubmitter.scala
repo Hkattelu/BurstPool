@@ -44,7 +44,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     case submitNonce(user: User, nonce: Long, deadline: BigInteger) => {
       if(isBestDeadline(deadline)){
         http.singleRequest(
-          HttpRequest(method = PUT,
+          HttpRequest(method = POST,
            uri = baseSubmitURI+"&accountId="+user.id+"&nonce="+nonce)
         ) onComplete {
           case Success(res: HttpResponse) => {
