@@ -11,12 +11,14 @@ import scala.util.{ Failure, Success }
 import HttpMethods._
 import akka.util.Timeout
 import scala.collection.concurrent.TrieMap
+import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 import net.liftweb.json._
 
 import java.lang.Long
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentLinkedQueue
 
 case class addShares(blockId: BigInteger, shares: List[Share])
 case class BlockResponse(totalAmountNQT: String, totalFeeNQT: String)
@@ -89,6 +91,22 @@ class UserPayout extends Actor with ActorLogging {
     }
     case addShares(blockId: BigInteger, shares: List[Share]) => {
       sharesToPay += (blockId->shares)
+    }
+  }
+
+  object historicShareQueue {
+
+    var queue: ConcurrentLinkedQueue[Map[Long, Double]] = 
+      new ConcurrentLinkedQueue[Map[Long, Double]]()
+    val maxSize = Config.MIN_HEIGHT_DIFF
+
+    def enqueue(map: Map[Long, Double]) {
+      queue.add(map)
+      if(queue.size() > maxSize) queue.poll()
+    }
+
+    def getIterator(): Iterator[Map[Long, Double]] = {
+      return queue.iterator()
     }
   }
 }

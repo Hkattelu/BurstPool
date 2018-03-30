@@ -15,6 +15,7 @@ import java.time.LocalDateTime
 case class containsUser(ip_address: String)
 case class addUser(ip_address: String, accountId: Long)
 case class getUser(ip: String)
+case class getActiveUsers()
 case class banUser(ip_address: String, until: LocalDateTime)
 case class refreshUsers()
 case class updateSubmitTime(ip_address: String)
@@ -45,6 +46,9 @@ class UserManager extends Actor with ActorLogging {
     }
     case getUser(ip: String) => {
       sender ! activeUsers.getOrElse(ip, null)
+    }
+    case getActiveUsers() => {
+      sender ! activeUsers
     }
     case banUser(ip_address: String, until: LocalDateTime) => {
       bannedAddresses += (ip_address->until)
