@@ -23,9 +23,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 case class addShares(blockId: BigInteger, shares: List[Share])
 case class BlockResponse(totalAmountNQT: String, totalFeeNQT: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
-case class PayoutShares()
+case class PayoutRewards()
 
-class UserPayout extends Actor with ActorLogging {
+class RewardPayout extends Actor with ActorLogging {
 
   import context.dispatcher 
 
@@ -41,16 +41,8 @@ class UserPayout extends Actor with ActorLogging {
     "&secretPhrase=" + Config.SECRET_PHRASE)
   val baseBlockURI = Config.NODE_ADDRESS + "/burst?requestType=getBlock&block="
 
-  def weightsToPercents(weights: Map[Long, Long]): Map[Long, Double] = {
-    val inverseWeights = 
-      weights.map{case (k,v) => (k, 1/v)}.asInstanceOf[Map[Long, Double]]
-    var inverseSum = 0.0
-    for((k,v) <- inverseWeights) inverseSum += v
-    return inverseWeights.map{ case (k,v) => (k, v/inverseSum)}
-  }
-
   def receive() = {
-    case PayoutShares() => {
+    case PayoutRewards() => {
       for((blockId, shares) <- sharesToPay) {
         http.singleRequest(
           HttpRequest(uri = baseBlockURI + blockId.toString())
@@ -62,7 +54,7 @@ class UserPayout extends Actor with ActorLogging {
             val toPayNQT = ((1-Config.POOL_FEE) * rewardNQT).asInstanceOf[Long]
             var shareWeights = Map[Long, Long]()
             for(share <- shares) shareWeights += (share.userId->share.deadline)
-            val sharePercents = weightsToPercents(shareWeights)
+            val sharePercents = Map[Long, Double]()
             for((id, percent) <- sharePercents) {
               val amount = (toPayNQT * percent).asInstanceOf[Long] - burstToNQT
               if (amount > burstToNQT) {
@@ -91,22 +83,6 @@ class UserPayout extends Actor with ActorLogging {
     }
     case addShares(blockId: BigInteger, shares: List[Share]) => {
       sharesToPay += (blockId->shares)
-    }
-  }
-
-  object historicShareQueue {
-
-    var queue: ConcurrentLinkedQueue[Map[Long, Double]] = 
-      new ConcurrentLinkedQueue[Map[Long, Double]]()
-    val maxSize = Config.MIN_HEIGHT_DIFF
-
-    def enqueue(map: Map[Long, Double]) {
-      queue.add(map)
-      if(queue.size() > maxSize) queue.poll()
-    }
-
-    def getIterator(): Iterator[Map[Long, Double]] = {
-      return queue.iterator()
     }
   }
 }

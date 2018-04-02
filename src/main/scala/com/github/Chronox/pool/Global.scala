@@ -14,8 +14,8 @@ object Global {
   var deadlineSubmitter: ActorRef = null
   var deadlineChecker: ActorRef = null
   var userManager: ActorRef = null
-  var rewardManager: ActorRef = null
-  var userPayout: ActorRef = null
+  var shareManager: ActorRef = null
+  var rewardPayout: ActorRef = null
   val poolStatistics = PoolStatistics
 
   var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE

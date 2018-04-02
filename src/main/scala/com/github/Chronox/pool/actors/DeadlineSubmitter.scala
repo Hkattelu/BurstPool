@@ -57,7 +57,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
               if(deadline.compareTo(Global.currentBestDeadline) <= 0){
                 Global.currentBestDeadline = deadline
                 // Can convert bigint to long because it's less than the target
-                Global.rewardManager ! addShare(user, 
+                Global.shareManager ! addShare(user, 
                   new BigInteger(Global.miningInfo.block, 10),
                   nonce, deadline.longValue())
               }

@@ -35,6 +35,6 @@ class StateUpdater extends Actor with ActorLogging {
       Global.miningInfoUpdater ! getNewBlock()
       Global.userManager ! refreshUsers()
     }
-    case PayoutShares() => Global.userPayout ! PayoutShares()
+    case PayoutUsers() => Global.rewardPayout ! PayoutRewards()
   }
 }

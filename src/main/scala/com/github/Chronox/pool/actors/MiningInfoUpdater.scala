@@ -42,10 +42,10 @@ class MiningInfoUpdater extends Actor with ActorLogging {
           val temp = parse(body.utf8String).extract[MiningInfo]
           if(temp.generationSignature != Global.miningInfo.generationSignature){
             if(temp.generator == Config.ACCOUNT_ID){
-              Global.rewardManager ! queueCurrentShares(
+              Global.shareManager ! queueCurrentShares(
                 new BigInteger(temp.block))
             } else {
-              Global.rewardManager ! dumpCurrentShares()
+              Global.shareManager ! dumpCurrentShares()
             }
             Global.miningInfo = temp
             Global.deadlineSubmitter ! resetBestDeadline()

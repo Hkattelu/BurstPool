@@ -27,8 +27,8 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
   Global.deadlineChecker = system.actorOf(Props[DeadlineChecker])
   Global.userManager = system.actorOf(Props[UserManager])
-  Global.rewardManager = system.actorOf(Props[RewardManager])
-  Global.userPayout = system.actorOf(Props[UserPayout])
+  Global.shareManager = system.actorOf(Props[ShareManager])
+  Global.rewardPayout = system.actorOf(Props[RewardPayout])
   
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")

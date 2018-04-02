@@ -22,13 +22,13 @@ case class addShare(user: User, blockId: BigInteger,
 case class dumpCurrentShares()
 case class queueCurrentShares(blockId: BigInteger)
 
-class RewardManager extends Actor with ActorLogging {
+class ShareManager extends Actor with ActorLogging {
   var currentShares = TrieMap[User, Share]()
 
   def receive() = {
     case addShare(user: User, blockId: BigInteger, 
       nonce: Long, deadline: Long) => {
-      val share: Share = new Share(user.id, blockId, nonce, deadline, false)
+      val share: Share = new Share(user.id, blockId, nonce, deadline)
       if (currentShares contains user) currentShares(user) = share
       else currentShares += (user->share)
     }
@@ -37,8 +37,16 @@ class RewardManager extends Actor with ActorLogging {
       currentShares.clear()
     }
     case queueCurrentShares(blockId: BigInteger) => {
-      Global.userPayout ! addShares(blockId, currentShares.values.toList)
+      Global.rewardPayout ! addShares(blockId, currentShares.values.toList)
     }
+  }
+
+  def weightsToPercents(weights: Map[Long, Long]): Map[Long, Double] = {
+    val inverseWeights = 
+      weights.map{case (k,v) => (k, 1/v)}.asInstanceOf[Map[Long, Double]]
+    var inverseSum = 0.0
+    for((k,v) <- inverseWeights) inverseSum += v
+    return inverseWeights.map{ case (k,v) => (k, v/inverseSum)}
   }
 
   object historicShareQueue {
