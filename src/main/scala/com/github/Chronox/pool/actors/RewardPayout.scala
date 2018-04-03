@@ -2,6 +2,7 @@ package com.github.Chronox.pool.actors
 
 import com.github.Chronox.pool.Config
 import com.github.Chronox.pool.db.Share
+import com.github.Chronox.pool.db.Reward
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
@@ -20,7 +21,9 @@ import java.lang.Long
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 
-case class addShares(blockId: BigInteger, shares: List[Share])
+case class addRewards(blockId: BigInteger, 
+  currentSharePercents: Map[Long, Double],
+  historicSharePercents: Map[Long, Double])
 case class BlockResponse(totalAmountNQT: String, totalFeeNQT: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
 case class PayoutRewards()
@@ -33,7 +36,7 @@ class RewardPayout extends Actor with ActorLogging {
   final implicit val materializer: ActorMaterializer = 
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
-  var sharesToPay = TrieMap[BigInteger, List[Share]]()
+  var rewardsToPay = TrieMap[BigInteger, List[Reward]]()
   val burstToNQT = 100000000L
   val http = Http(context.system)
   val baseTxURI = (Config.NODE_ADDRESS + 
@@ -43,7 +46,7 @@ class RewardPayout extends Actor with ActorLogging {
 
   def receive() = {
     case PayoutRewards() => {
-      for((blockId, shares) <- sharesToPay) {
+      for((blockId, rewards) <- rewardsToPay) {
         http.singleRequest(
           HttpRequest(uri = baseBlockURI + blockId.toString())
         ) onComplete {
@@ -52,15 +55,17 @@ class RewardPayout extends Actor with ActorLogging {
             val rewardNQT = (Long.parseUnsignedLong(blockRes.totalAmountNQT) +
               Long.parseUnsignedLong(blockRes.totalFeeNQT))
             val toPayNQT = ((1-Config.POOL_FEE) * rewardNQT).asInstanceOf[Long]
-            var shareWeights = Map[Long, Long]()
-            for(share <- shares) shareWeights += (share.userId->share.deadline)
-            val sharePercents = Map[Long, Double]()
-            for((id, percent) <- sharePercents) {
-              val amount = (toPayNQT * percent).asInstanceOf[Long] - burstToNQT
-              if (amount > burstToNQT) {
+            for(reward <- rewards) {
+              val rewardPercent =
+                (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
+                (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
+              val amount = (toPayNQT * rewardPercent).asInstanceOf[Long]
+               - burstToNQT
+              if (amount > 0) {
                 http.singleRequest(
-                  HttpRequest(method = POST,
-                   uri = baseTxURI+"&recipient="+id+"&amountNQT="+amount)
+                  HttpRequest(method = POST, 
+                    uri = baseTxURI+"&recipient="+reward.userId+
+                    "&amountNQT="+amount)
                 ) onComplete {
                   case Success(res: HttpResponse) => {
                     val txRes = parse(
@@ -71,7 +76,7 @@ class RewardPayout extends Actor with ActorLogging {
                   case Failure(error) => log.error(error.toString())
                 }
               } else {
-                log.info("User " + id + " did not have enough burst for fee")
+                log.info("User "+reward.userId+" could not pay the TX fee")
               }
             }
           }
@@ -84,7 +89,14 @@ class RewardPayout extends Actor with ActorLogging {
     case addRewards(blockId: BigInteger, 
       currentSharePercents: Map[Long, Double],
       historicSharePercents: Map[Long, Double]) => {
-      sharesToPay += (blockId->shares)
+      var rewards = Map[Long, Reward]()
+      for((id, percent) <- historicSharePercents)
+        rewards += (id->(new Reward(id, blockId, 0.0, percent, false)))
+      for((id, percent) <- currentSharePercents){
+        if (rewards contains id) rewards(id).currentPercent = percent
+        else rewards += (id->(new Reward(id, blockId, percent, 0.0, false)))
+      }
+      rewardsToPay += (blockId->rewards.values.toList)
     }
   }
 }

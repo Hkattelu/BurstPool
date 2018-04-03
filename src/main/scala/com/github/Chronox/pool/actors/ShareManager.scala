@@ -15,6 +15,7 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConversions._
 import java.util.concurrent.ConcurrentLinkedQueue
 
+import java.lang.Long
 import java.math.BigInteger
 
 case class addShare(user: User, blockId: BigInteger,
@@ -38,14 +39,15 @@ class ShareManager extends Actor with ActorLogging {
     }
     case queueCurrentShares(blockId: BigInteger) => {
       Global.rewardPayout ! addRewards(blockId, 
-        sharesToRewardPercents(currentShares), historicShareQueue.getPercents())
+        sharesToRewardPercents(currentShares.toMap[User, Share]), 
+        historicShareQueue.getPercents())
       currentShares.clear()
     }
   }
 
   def sharesToRewardPercents(weights: Map[User, Share]): Map[Long, Double] = {
     val inverseWeights = weights.map{case (k,v) => 
-        (k.id, 1/v.deadline}.asInstanceOf[Map[Long, Double]]
+        (k.id, 1/v.deadline)}.asInstanceOf[Map[Long, Double]]
     var inverseSum = 0.0
     for((k,v) <- inverseWeights) inverseSum += v
     return inverseWeights.map{case(k,v) => (k, v/inverseSum)}
@@ -62,17 +64,19 @@ class ShareManager extends Actor with ActorLogging {
     }
 
     def getPercents(): Map[Long, Double] = {
-      val iterator = queue.getIterator()
-      var netHistoricPercents = Map[Long, List[Double]]()
+      val iterator = queue.iterator()
+      var netHistoricPercents = 
+        scala.collection.mutable.Map[Long, List[Double]]()
       while (iterator.hasNext()) {
-        for ((id, percent) <- sharesToRewardPercents(iterator.next())) {
+        for ((id, percent) <- 
+          sharesToRewardPercents(iterator.next().toMap[User, Share])) {
           if (netHistoricPercents contains id) 
-            netHistoricPercents(id) += percent
+            percent ::netHistoricPercents(id)
           else 
-            netHistoricPercents += (id, List[Double](percent))
+            netHistoricPercents += (id -> List[Double](percent))
         }
       }
-      return netHistoricPercents.map{case(k,v) => (k, v/queue.size())}
+      return netHistoricPercents.map{case(k,v) => (k, v.sum/v.length)}.toMap
     }
   }
 }
