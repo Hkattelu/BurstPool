@@ -37,16 +37,18 @@ class ShareManager extends Actor with ActorLogging {
       currentShares.clear()
     }
     case queueCurrentShares(blockId: BigInteger) => {
-      Global.rewardPayout ! addShares(blockId, currentShares.values.toList)
+      Global.rewardPayout ! addRewards(blockId, 
+        sharesToRewardPercents(currentShares), historicShareQueue.getPercents())
+      currentShares.clear()
     }
   }
 
-  def weightsToPercents(weights: Map[Long, Long]): Map[Long, Double] = {
-    val inverseWeights = 
-      weights.map{case (k,v) => (k, 1/v)}.asInstanceOf[Map[Long, Double]]
+  def sharesToRewardPercents(weights: Map[User, Share]): Map[Long, Double] = {
+    val inverseWeights = weights.map{case (k,v) => 
+        (k.id, 1/v.deadline}.asInstanceOf[Map[Long, Double]]
     var inverseSum = 0.0
     for((k,v) <- inverseWeights) inverseSum += v
-    return inverseWeights.map{ case (k,v) => (k, v/inverseSum)}
+    return inverseWeights.map{case(k,v) => (k, v/inverseSum)}
   }
 
   object historicShareQueue {
@@ -59,8 +61,18 @@ class ShareManager extends Actor with ActorLogging {
       if(queue.size() > maxSize) queue.poll()
     }
 
-    def getIterator(): Iterator[TrieMap[User, Share]] = {
-      return queue.iterator()
+    def getPercents(): Map[Long, Double] = {
+      val iterator = queue.getIterator()
+      var netHistoricPercents = Map[Long, List[Double]]()
+      while (iterator.hasNext()) {
+        for ((id, percent) <- sharesToRewardPercents(iterator.next())) {
+          if (netHistoricPercents contains id) 
+            netHistoricPercents(id) += percent
+          else 
+            netHistoricPercents += (id, List[Double](percent))
+        }
+      }
+      return netHistoricPercents.map{case(k,v) => (k, v/queue.size())}
     }
   }
 }

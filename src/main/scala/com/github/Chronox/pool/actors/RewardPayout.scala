@@ -81,7 +81,9 @@ class RewardPayout extends Actor with ActorLogging {
         } 
       }
     }
-    case addShares(blockId: BigInteger, shares: List[Share]) => {
+    case addRewards(blockId: BigInteger, 
+      currentSharePercents: Map[Long, Double],
+      historicSharePercents: Map[Long, Double]) => {
       sharesToPay += (blockId->shares)
     }
   }
