@@ -41,11 +41,13 @@ class RewardPayout extends Actor with ActorLogging {
   val http = Http(context.system)
   val baseTxURI = (Config.NODE_ADDRESS + 
     "/burst?requestType=sendMoney&deadline=1440&feeNQT="+burstToNQT.toString+
-    "&secretPhrase=" + Config.SECRET_PHRASE)
+    "&secretPhrase="+Config.SECRET_PHRASE)
   val baseBlockURI = Config.NODE_ADDRESS + "/burst?requestType=getBlock&block="
 
   def receive() = {
     case PayoutRewards() => {
+      var blockToNQT = scala.collection.mutable.Map[BigInteger, Long]()
+      var userToRewards = scala.collection.mutable.Map[Long, List[Reward]]()
       for((blockId, rewards) <- rewardsToPay) {
         http.singleRequest(
           HttpRequest(uri = baseBlockURI + blockId.toString())
@@ -54,44 +56,55 @@ class RewardPayout extends Actor with ActorLogging {
             val blockRes = parse(res.entity.toString()).extract[BlockResponse]
             val rewardNQT = (Long.parseUnsignedLong(blockRes.totalAmountNQT) +
               Long.parseUnsignedLong(blockRes.totalFeeNQT))
-            val toPayNQT = ((1-Config.POOL_FEE) * rewardNQT).asInstanceOf[Long]
-            for(reward <- rewards) {
-              val rewardPercent =
-                (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
-                (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
-              val amount = (toPayNQT * rewardPercent).asInstanceOf[Long]
-               - burstToNQT
-              if (amount > 0) {
-                http.singleRequest(
-                  HttpRequest(method = POST, 
-                    uri = baseTxURI+"&recipient="+reward.userId+
-                    "&amountNQT="+amount)
-                ) onComplete {
-                  case Success(res: HttpResponse) => {
-                    val txRes = parse(
-                      res.entity.toString()).extract[TransactionResponse]
-                    log.info("Tx Id: " + txRes.transaction +
-                      ", Broadcasted: " + txRes.broadcast)
-                  }
-                  case Failure(error) => log.error(error.toString())
-                }
-              } else {
-                log.info("User "+reward.userId+" could not pay the TX fee")
-              }
-            }
+            blockToNQT += (blockId->((1-Config.POOL_FEE) * rewardNQT).toLong)
           }
           case Failure(error) => {
             log.error("Failed to get block info: " + error.toString())
           }
+        }
+        for(reward <- rewards) {
+          if (userToRewards contains reward.userId) 
+            reward :: userToRewards(reward.userId)
+          else 
+            userToRewards += (reward.userId->List[Reward](reward))
         } 
+      }
+
+      for((id, rewards) <- userToRewards) {
+        var amount = 0 - burstToNQT
+        var markAsPaid = List[Reward]()
+        for(reward <- rewards) {
+          val rewardPercent =
+            (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
+            (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
+          if(blockToNQT contains reward.blockId){
+            amount += (blockToNQT(reward.blockId) * rewardPercent).toLong
+            reward :: markAsPaid
+          }
+        }
+        if (amount > 0) {
+          http.singleRequest(HttpRequest(method = POST, 
+              uri = baseTxURI+"&recipient="+id+"&amountNQT="+amount)
+          ) onComplete {
+            case Success(res: HttpResponse) => {
+              val txRes = parse(
+                res.entity.toString()).extract[TransactionResponse]
+              log.info("Tx Id: " + txRes.transaction +
+                ", Broadcasted: " + txRes.broadcast)
+              for(reward <- markAsPaid) reward.isPaid = true
+            }
+            case Failure(error) => log.error(error.toString())
+          }
+        } else {
+          log.info("User " + id + " could not pay the TX fee")
+        }
       }
     }
     case addRewards(blockId: BigInteger, 
       currentSharePercents: Map[Long, Double],
       historicSharePercents: Map[Long, Double]) => {
-      var rewards = Map[Long, Reward]()
-      for((id, percent) <- historicSharePercents)
-        rewards += (id->(new Reward(id, blockId, 0.0, percent, false)))
+      var rewards = historicSharePercents.map{case(k,v) => 
+        (k, new Reward(k, blockId, 0.0, v, false))}
       for((id, percent) <- currentSharePercents){
         if (rewards contains id) rewards(id).currentPercent = percent
         else rewards += (id->(new Reward(id, blockId, percent, 0.0, false)))

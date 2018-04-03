@@ -56,11 +56,10 @@ class ShareManager extends Actor with ActorLogging {
   object historicShareQueue {
     var queue: ConcurrentLinkedQueue[TrieMap[User, Share]] = 
       new ConcurrentLinkedQueue[TrieMap[User, Share]]()
-    val maxSize = Config.MIN_HEIGHT_DIFF
 
     def enqueue(map: TrieMap[User, Share]) {
       queue.add(map)
-      if(queue.size() > maxSize) queue.poll()
+      if(queue.size() > Config.MIN_HEIGHT_DIFF) queue.poll()
     }
 
     def getPercents(): Map[Long, Double] = {
