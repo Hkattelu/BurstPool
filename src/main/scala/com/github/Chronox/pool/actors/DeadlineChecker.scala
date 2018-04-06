@@ -42,7 +42,7 @@ class DeadlineChecker extends Actor with ActorLogging {
     val seedBuffer = ByteBuffer.allocate(40)
     var genSigBytes = new BigInteger(
         Global.miningInfo.generationSignature, 16).toByteArray
-    seedBuffer.put(genSigBQERFytes)
+    seedBuffer.put(genSigBytes)
     seedBuffer.putLong(Global.miningInfo.height)
     md.update(seedBuffer.array())
 

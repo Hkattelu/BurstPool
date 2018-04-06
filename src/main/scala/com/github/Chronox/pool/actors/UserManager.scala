@@ -54,13 +54,13 @@ class UserManager extends Actor with ActorLogging {
       var prevNum: Int = bannedAddresses.size
       bannedAddresses.retain((k,v) => v isAfter LocalDateTime.now())
       Global.poolStatistics.decrementBannedAddressesBy(
-        bannedAddresses.size - prevNum)
+        prevNum - bannedAddresses.size)
 
       prevNum = activeUsers.size
       activeUsers.retain((k,v) => {
         v.lastSubmitHeight > (Global.miningInfo.height - Config.MIN_HEIGHT_DIFF)
         })
-      Global.poolStatistics.decrementActiveUsersBy(activeUsers.size - prevNum)
+      Global.poolStatistics.decrementActiveUsersBy(prevNum - activeUsers.size)
 
       if (activeUsers.size != prevNum){
         Global.poolStatistics.resetActiveTB()

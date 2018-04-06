@@ -77,43 +77,6 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     deadline.toString() should equal ("216907742700256")
   }
 
-  test("Submitting a bad nonce"){
-    val accId = "1" 
-    val nonce = "1" // Random nonce, will probably be bad
-    get("/burst", Map("requestType" -> "submitNonce",
-      "accountId" -> accId, "nonce" -> nonce)){
-      status should equal (500)
-    }
-  }
-
-  test("Submitting a valid nonce"){
-    // Hardcoded constants, should work
-    val accId = "13606764479022549485"
-    val nonce = "2801024039"
-    Global.miningInfo = new MiningInfo( 
-      "6acc1e02f47ef19ab24c2e0ca2af866e7a36afa9f18c6fe4a7300c125a862d5c",
-      null, "59301", 476779L, null, null, null, null)
-    get("/burst", Map("requestType" -> "submitNonce",
-      "accountId" -> accId, "nonce" -> nonce)){
-      status should equal (200)
-    }
-  }
-
-  test("Banning a user"){
-    Global.userManager ! banUser("1", LocalDateTime.now().plusSeconds(2))
-    Global.userManager ! addUser("1", 2)
-    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
-    Await.result(future, timeout.duration) should equal (false)
-  }
-
-  test("Unbanning a user"){
-    Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
-    Global.userManager ! refreshUsers()
-    Global.userManager ! addUser("1", 2)
-    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
-    Await.result(future, timeout.duration) should equal (true)
-  }
-
   test("Simple Shares to Reward calculation"){
     var weights = Map[User, Share]()
     var percents = Map[scala.Long, BigDecimal]()
@@ -156,12 +119,64 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     Await.result(future, timeout.duration).toSet should equal (percents.toSet)
   }
 
-  test("Getting pool statistics"){
+  test("Adding Users pool statistics"){
+    Global.poolStatistics.numActiveUsers.get() should equal (0)
+    Global.poolStatistics.numTotalUsers.get() should equal (0)
+    for(i <- 1 to 5) Global.userManager ! addUser(i.toString(), i.toLong)
 
+    Thread.sleep(100)
+    Global.poolStatistics.numTotalUsers.get() should equal (5)
+    Global.poolStatistics.numActiveUsers.get() should equal (5)
   }
 
-  test("100 user stress test"){
+  test("Banning Users pool statistics"){
+    Global.poolStatistics.numActiveUsers.get() should equal (5)
+    Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
 
+    Thread.sleep(100)
+    Global.poolStatistics.numBannedAddresses.get() should equal (1)
+    Global.poolStatistics.numTotalUsers.get() should equal (5)
+    Global.userManager ! refreshUsers()
+
+    Thread.sleep(100)
+    Global.poolStatistics.numBannedAddresses.get() should equal (0)
+  }
+
+  test("Banning a user"){
+    Global.userManager ! banUser("6", LocalDateTime.now().plusSeconds(2))
+    Global.userManager ! addUser("6", 2)
+    val future = (Global.userManager ? containsUser("6")).mapTo[Boolean]
+    Await.result(future, timeout.duration) should equal (false)
+  }
+
+  test("Unbanning a user"){
+    Global.userManager ! banUser("7", LocalDateTime.now().minusSeconds(1))
+    Global.userManager ! refreshUsers()
+    Global.userManager ! addUser("7", 2)
+    val future = (Global.userManager ? containsUser("7")).mapTo[Boolean]
+    Await.result(future, timeout.duration) should equal (true)
+  }
+
+  test("Submitting a bad nonce"){
+    val accId = "1" 
+    val nonce = "1" // Random nonce, will probably be bad
+    get("/burst", Map("requestType" -> "submitNonce",
+      "accountId" -> accId, "nonce" -> nonce)){
+      status should equal (500)
+    }
+  }
+
+  test("Submitting a valid nonce"){
+    // Hardcoded constants, should work
+    val accId = "13606764479022549485"
+    val nonce = "2801024039"
+    Global.miningInfo = new MiningInfo( 
+      "6acc1e02f47ef19ab24c2e0ca2af866e7a36afa9f18c6fe4a7300c125a862d5c",
+      null, "59301", 476779L, null, null, null, null)
+    get("/burst", Map("requestType" -> "submitNonce",
+      "accountId" -> accId, "nonce" -> nonce)){
+      status should equal (200)
+    }
   }
 
   override def afterAll() {
