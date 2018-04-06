@@ -10,8 +10,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import org.scalatra.{Accepted, FutureSupport, ScalatraServlet}
 import scala.util.{ Failure, Success }
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext, Await}
 import scala.concurrent.duration._
 
 import org.scalatra._
@@ -45,13 +44,10 @@ with JacksonJsonSupport with FutureSupport {
             
             var deadline: BigInteger = 
               Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
-            val deadlineFuture: Future[Any] = 
-              Global.deadlineChecker ? nonceToDeadline(accId, nonce)
-            deadlineFuture onSuccess {
-              case Some(result) => {
-                deadline = result.asInstanceOf[BigInteger]
-              }
-            }
+            val deadlineFuture = (
+              Global.deadlineChecker ? nonceToDeadline(accId, nonce))
+              .mapTo[BigInteger]
+            deadline = Await.result(deadlineFuture, timeout.duration)
             if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
               Global.poolStatistics.incrementValidNonces()
               // Add user if we haven't seen this IP before
@@ -65,21 +61,28 @@ with JacksonJsonSupport with FutureSupport {
               }
               // Get the user from the manager
               var user: User = null
-              val userFuture: Future[Any] = Global.userManager ? getUser(ip)
-              userFuture onSuccess {
-                case Some(result) => {user = result.asInstanceOf[User]}
-              }
+              val userFuture = (Global.userManager ? getUser(ip)).mapTo[User]
+              user = Await.result(userFuture, timeout.duration)
+
               // Submit nonce if it is better than the pool's currentbest
               if(deadline.compareTo(Global.currentBestDeadline) <= 0)
                 Global.deadlineSubmitter ! submitNonce(user, nonce, deadline)
-                Global.userManager ! updateSubmitTime(ip)
+              Global.userManager ! updateSubmitTime(ip)
+              response.getWriter().println("Deadline successfully submitted")
             } else {
               Global.userManager ! banUser(ip,
                 LocalDateTime.now().plusMinutes(Config.BAN_TIME))
               Global.poolStatistics.incrementBadNonces()
+              response.setStatus(500)
+              response.getWriter().println(
+                "You submitted a bad deadline, and are now temporarily banned")
             }
+            response.getWriter().println("Deadline: " + deadline.toString())
           } catch {
-            case e: NoSuchElementException => "No account ID or nonce provided"
+            case e: NoSuchElementException => {
+              response.setStatus(400)
+              response.getWriter().println("No account ID or nonce provided")
+            }
           }
         }
         case "getMiningInfo" => Global.miningInfo

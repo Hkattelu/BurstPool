@@ -15,6 +15,7 @@ import org.scalatest.FunSuiteLike
 import _root_.akka.actor.{Props, ActorSystem}
 import javax.servlet.ServletContext
 
+import java.lang.Long
 import java.math.BigInteger
 import scala.math.BigDecimal.RoundingMode
 
@@ -67,22 +68,31 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     }
   }
 
-  test("Getting pool statistics"){
-
+  test("Shabal works properly"){
+    val accId: Long = 1
+    val nonce: Long = 1
+    val future = (Global.deadlineChecker ? nonceToDeadline(accId, nonce))
+      .mapTo[BigInteger]
+    val deadline = Await.result(future, timeout.duration)
+    deadline.toString() should equal ("216907742700256")
   }
 
   test("Submitting a bad nonce"){
-    val accId = "15240509513051186062"
-    val nonce = "2"
+    val accId = "1" 
+    val nonce = "1" // Random nonce, will probably be bad
     get("/burst", Map("requestType" -> "submitNonce",
       "accountId" -> accId, "nonce" -> nonce)){
-      status should equal (200)
+      status should equal (500)
     }
   }
 
-  test("Submitting a valid but not best nonce"){
-    val accId = "15240509513051186062"
-    val nonce = "889638458"
+  test("Submitting a valid nonce"){
+    // Hardcoded constants, should work
+    val accId = "13606764479022549485"
+    val nonce = "2801024039"
+    Global.miningInfo = new MiningInfo( 
+      "6acc1e02f47ef19ab24c2e0ca2af866e7a36afa9f18c6fe4a7300c125a862d5c",
+      null, "59301", 476779L, null, null, null, null)
     get("/burst", Map("requestType" -> "submitNonce",
       "accountId" -> accId, "nonce" -> nonce)){
       status should equal (200)
@@ -106,7 +116,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
 
   test("Simple Shares to Reward calculation"){
     var weights = Map[User, Share]()
-    var percents = Map[Long, BigDecimal]()
+    var percents = Map[scala.Long, BigDecimal]()
     val fraction = BigDecimal.valueOf(16)/BigDecimal.valueOf(15)
     for(i <- 1 to 4) {
       percents += (i.toLong->(fraction/BigDecimal.valueOf(1 << i))
@@ -121,7 +131,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
 
   test("Historical Shares to Reward calculation (over the historical limit)"){
     var weights = Map[User, Share]()
-    var percents = Map[Long, BigDecimal]()
+    var percents = Map[scala.Long, BigDecimal]()
     var users = Map[Int, User]()
     val fraction = BigDecimal.valueOf(16)/BigDecimal.valueOf(15)
     for(i <- 1 to 4) users += (i->(new User(i)))
@@ -137,8 +147,8 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     Global.shareManager ! dumpCurrentShares()
 
     for(i <- 1 to (Config.MIN_HEIGHT_DIFF + 100)){ 
-      for(j <- 1 to 4)
-        Global.shareManager ! addShare(users(j), BigInteger.valueOf(0), 0, 1<<j)
+      for(j <- 1 to 4) Global.shareManager ! addShare(users(j), 
+        BigInteger.valueOf(0), 0, 1 << j)
       Global.shareManager ! dumpCurrentShares()
     }
     val future = (Global.shareManager ? getAverageHistoricalPercents()
@@ -146,7 +156,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     Await.result(future, timeout.duration).toSet should equal (percents.toSet)
   }
 
-  test("Overwriting previous best nonce"){
+  test("Getting pool statistics"){
 
   }
 
