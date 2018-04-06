@@ -2,9 +2,7 @@ package com.github.Chronox.pool.actors
 
 import com.github.Chronox.pool.Global
 import com.github.Chronox.pool.Config
-import com.github.Chronox.pool.db.User
-import com.github.Chronox.pool.db.Reward
-import com.github.Chronox.pool.db.Share
+import com.github.Chronox.pool.db.{User, Reward, Share}
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.model._
@@ -17,14 +15,18 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 import java.lang.Long
 import java.math.BigInteger
+import scala.math.BigDecimal.RoundingMode
 
 case class addShare(user: User, blockId: BigInteger,
   nonce: Long, deadline: Long)
 case class dumpCurrentShares()
 case class queueCurrentShares(blockId: BigInteger)
+case class getCurrentPercents()
+case class getAverageHistoricalPercents()
 
 class ShareManager extends Actor with ActorLogging {
   var currentShares = TrieMap[User, Share]()
+  val one = BigDecimal.valueOf(1)
 
   def receive() = {
     case addShare(user: User, blockId: BigInteger, 
@@ -39,18 +41,26 @@ class ShareManager extends Actor with ActorLogging {
     }
     case queueCurrentShares(blockId: BigInteger) => {
       Global.rewardPayout ! addRewards(blockId, 
-        sharesToRewardPercents(currentShares.toMap[User, Share]), 
+        sharesToRewardPercents(currentShares.toMap), 
         historicShareQueue.getPercents())
+      historicShareQueue.enqueue(currentShares clone)
       currentShares.clear()
+    }
+    case getCurrentPercents() => {
+      sender ! sharesToRewardPercents(currentShares.toMap)
+    }
+    case getAverageHistoricalPercents() => {
+      sender ! historicShareQueue.getPercents()
     }
   }
 
-  def sharesToRewardPercents(weights: Map[User, Share]): Map[Long, Double] = {
-    val inverseWeights = weights.map{case (k,v) => 
-        (k.id, 1/v.deadline)}.asInstanceOf[Map[Long, Double]]
-    var inverseSum = 0.0
-    for((k,v) <- inverseWeights) inverseSum += v
-    return inverseWeights.map{case(k,v) => (k, v/inverseSum)}
+  def sharesToRewardPercents(weights: Map[User, Share]): 
+    Map[Long, BigDecimal] = {
+    val inverseWeights = weights.map{case (k,v) => (k.id, 
+      one/BigDecimal.valueOf(v.deadline))}.asInstanceOf[Map[Long, BigDecimal]]
+    val inverseSum = inverseWeights.values.sum
+    return inverseWeights.map{case(k,v) => (
+      k, (v/inverseSum).setScale(8, RoundingMode.HALF_EVEN))}
   }
 
   object historicShareQueue {
@@ -62,17 +72,17 @@ class ShareManager extends Actor with ActorLogging {
       if(queue.size() > Config.MIN_HEIGHT_DIFF) queue.poll()
     }
 
-    def getPercents(): Map[Long, Double] = {
+    def getPercents(): Map[Long, BigDecimal] = {
       val iterator = queue.iterator()
       var netHistoricPercents = 
-        scala.collection.mutable.Map[Long, List[Double]]()
+        scala.collection.mutable.Map[Long, List[BigDecimal]]()
       while (iterator.hasNext()) {
         for ((id, percent) <- 
           sharesToRewardPercents(iterator.next().toMap[User, Share])) {
           if (netHistoricPercents contains id) 
-            percent ::netHistoricPercents(id)
+            percent :: netHistoricPercents(id)
           else 
-            netHistoricPercents += (id -> List[Double](percent))
+            netHistoricPercents += (id -> List[BigDecimal](percent))
         }
       }
       return netHistoricPercents.map{case(k,v) => (k, v.sum/v.length)}.toMap

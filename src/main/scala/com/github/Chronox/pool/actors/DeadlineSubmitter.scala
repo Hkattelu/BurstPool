@@ -1,7 +1,6 @@
 package com.github.Chronox.pool.actors
 
-import com.github.Chronox.pool.Global
-import com.github.Chronox.pool.Config
+import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.db.User
 
 import akka.actor.{ Actor, ActorLogging }

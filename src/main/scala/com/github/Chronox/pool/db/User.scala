@@ -15,4 +15,6 @@ class User (
 ) {
   def this() = this(0L, 0L, null, false, null, 
     BigInteger.valueOf(0L), BigInteger.valueOf(0L), null, null)
+  def this(id: Long) = this(id, 0L, null, false, null, 
+    BigInteger.valueOf(0L), BigInteger.valueOf(0L), null, null)
 }

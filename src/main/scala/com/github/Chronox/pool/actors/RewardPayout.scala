@@ -1,8 +1,7 @@
 package com.github.Chronox.pool.actors
 
 import com.github.Chronox.pool.Config
-import com.github.Chronox.pool.db.Share
-import com.github.Chronox.pool.db.Reward
+import com.github.Chronox.pool.db.{Share, Reward}
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
@@ -22,8 +21,8 @@ import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 
 case class addRewards(blockId: BigInteger, 
-  currentSharePercents: Map[Long, Double],
-  historicSharePercents: Map[Long, Double])
+  currentSharePercents: Map[Long, BigDecimal],
+  historicSharePercents: Map[Long, BigDecimal])
 case class BlockResponse(totalAmountNQT: String, totalFeeNQT: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
 case class PayoutRewards()
@@ -71,14 +70,15 @@ class RewardPayout extends Actor with ActorLogging {
       }
 
       for((id, rewards) <- userToRewards) {
-        var amount = 0 - burstToNQT
+        var amount: Long = 0 - burstToNQT
         var markAsPaid = List[Reward]()
         for(reward <- rewards) {
           val rewardPercent =
             (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
             (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
           if(blockToNQT contains reward.blockId){
-            amount += (blockToNQT(reward.blockId) * rewardPercent).toLong
+            amount += (rewardPercent * BigDecimal.valueOf(
+              blockToNQT(reward.blockId))).longValue()
             reward :: markAsPaid
           }
         }
@@ -101,8 +101,8 @@ class RewardPayout extends Actor with ActorLogging {
       }
     }
     case addRewards(blockId: BigInteger, 
-      currentSharePercents: Map[Long, Double],
-      historicSharePercents: Map[Long, Double]) => {
+      currentSharePercents: Map[Long, BigDecimal],
+      historicSharePercents: Map[Long, BigDecimal]) => {
       var rewards = historicSharePercents.map{case(k,v) => 
         (k, new Reward(k, blockId, 0.0, v, false))}
       for((id, percent) <- currentSharePercents){

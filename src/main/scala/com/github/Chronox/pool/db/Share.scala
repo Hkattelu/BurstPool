@@ -9,4 +9,5 @@ class Share(
   var deadline: Long, // Null deadline signifies a historic share
 ) {
   def this() = this(0, BigInteger.valueOf(0), 0, 0L)
+  def this(deadline: Long) = this(0, BigInteger.valueOf(0), 0, deadline)
 }

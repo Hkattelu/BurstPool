@@ -1,7 +1,6 @@
 package com.github.Chronox.pool.actors
 
-import com.github.Chronox.pool.Global
-import com.github.Chronox.pool.Config
+import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.db.User
 
 import akka.actor.{ Actor, ActorLogging }
@@ -46,9 +45,6 @@ class UserManager extends Actor with ActorLogging {
     }
     case getUser(ip: String) => {
       sender ! activeUsers.getOrElse(ip, null)
-    }
-    case getActiveUsers() => {
-      sender ! activeUsers
     }
     case banUser(ip_address: String, until: LocalDateTime) => {
       bannedAddresses += (ip_address->until)

@@ -5,9 +5,10 @@ import java.math.BigInteger
 class Reward (
   var userId: Long,
   var blockId: BigInteger,
-  var currentPercent: Double,
-  var historicalPercent: Double,
+  var currentPercent: BigDecimal,
+  var historicalPercent: BigDecimal,
   var isPaid: Boolean,
 ) {
-  def this() = this(0, BigInteger.valueOf(0), 0.0, 0.0, false)
+  def this() = this(0, BigInteger.valueOf(0), BigDecimal.valueOf(0), 
+    BigDecimal.valueOf(0), false)
 }

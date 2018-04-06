@@ -4,20 +4,21 @@ import com.github.Chronox.pool._
 import com.github.Chronox.pool.actors._
 import com.github.Chronox.pool.servlets._
 import com.github.Chronox.pool.db._
-import akka.pattern.ask
 import akka.util.Timeout
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import akka.pattern.ask
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
 import org.scalatra.test.scalatest._
 import java.time.LocalDateTime
 import org.scalatest.FunSuiteLike
 import _root_.akka.actor.{Props, ActorSystem}
 import javax.servlet.ServletContext
 
-class PoolServletTests extends ScalatraSuite with FunSuiteLike{
+import java.math.BigInteger
+import scala.math.BigDecimal.RoundingMode
 
+class PoolServletTests extends ScalatraSuite with FunSuiteLike{
 
   Config.init()
   val system = ActorSystem()
@@ -75,7 +76,6 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     val nonce = "2"
     get("/burst", Map("requestType" -> "submitNonce",
       "accountId" -> accId, "nonce" -> nonce)){
-      println(body)
       status should equal (200)
     }
   }
@@ -92,22 +92,58 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   test("Banning a user"){
     Global.userManager ! banUser("1", LocalDateTime.now().plusSeconds(2))
     Global.userManager ! addUser("1", 2)
-    (Global.userManager ? containsUser("1")) onSuccess {
-      case Some(result) => {
-        result.asInstanceOf[Boolean] should equal (false)
-      }
-    }
+    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
+    Await.result(future, timeout.duration) should equal (false)
   }
 
   test("Unbanning a user"){
     Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
     Global.userManager ! refreshUsers()
     Global.userManager ! addUser("1", 2)
-    (Global.userManager ? containsUser("1")) onSuccess {
-      case Some(result) => {
-        result.asInstanceOf[Boolean] should equal (true)
-      }
+    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
+    Await.result(future, timeout.duration) should equal (true)
+  }
+
+  test("Simple Shares to Reward calculation"){
+    var weights = Map[User, Share]()
+    var percents = Map[Long, BigDecimal]()
+    val fraction = BigDecimal.valueOf(16)/BigDecimal.valueOf(15)
+    for(i <- 1 to 4) {
+      percents += (i.toLong->(fraction/BigDecimal.valueOf(1 << i))
+        .setScale(8, RoundingMode.HALF_EVEN))
+      Global.shareManager ! addShare(new User(i), 
+        BigInteger.valueOf(0), 0, 1 << i)
     }
+    val future = (Global.shareManager ? getCurrentPercents()
+      ).mapTo[Map[Long, BigDecimal]]
+    Await.result(future, timeout.duration).toSet should equal (percents.toSet)
+  }
+
+  test("Historical Shares to Reward calculation (over the historical limit)"){
+    var weights = Map[User, Share]()
+    var percents = Map[Long, BigDecimal]()
+    var users = Map[Int, User]()
+    val fraction = BigDecimal.valueOf(16)/BigDecimal.valueOf(15)
+    for(i <- 1 to 4) users += (i->(new User(i)))
+    for(i <- 1 to 4)
+      percents += (i.toLong->(fraction/BigDecimal.valueOf(1 << i))
+        .setScale(8, RoundingMode.HALF_EVEN))
+
+    //Add a bunch of random shares that should get overwrriten
+    Global.shareManager ! addShare(users(1), BigInteger.valueOf(0), 0, 2018)
+    Global.shareManager ! addShare(users(2), BigInteger.valueOf(0), 0, 9001)
+    Global.shareManager ! addShare(users(3), BigInteger.valueOf(0), 0, 1234)
+    Global.shareManager ! addShare(users(4), BigInteger.valueOf(0), 0, 1337)
+    Global.shareManager ! dumpCurrentShares()
+
+    for(i <- 1 to (Config.MIN_HEIGHT_DIFF + 100)){ 
+      for(j <- 1 to 4)
+        Global.shareManager ! addShare(users(j), BigInteger.valueOf(0), 0, 1<<j)
+      Global.shareManager ! dumpCurrentShares()
+    }
+    val future = (Global.shareManager ? getAverageHistoricalPercents()
+      ).mapTo[Map[Long, BigDecimal]]
+    Await.result(future, timeout.duration).toSet should equal (percents.toSet)
   }
 
   test("Overwriting previous best nonce"){
