@@ -51,6 +51,7 @@ with JacksonJsonSupport with FutureSupport {
             if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
               Global.poolStatistics.incrementValidNonces()
               // Add user if we haven't seen this IP before
+              // TODO: COndense this
               val containsUserFuture: Future[Any] = 
                 Global.userManager ? containsUser(ip)
               containsUserFuture onSuccess {

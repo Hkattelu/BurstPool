@@ -1,5 +1,4 @@
 package com.github.Chronox.pool.actors
-
 import com.github.Chronox.pool.{Global, Config}
 
 import akka.actor.{ Actor, ActorLogging }
@@ -14,7 +13,7 @@ import java.math.BigInteger
 
 case class getNewBlock()
 case class MiningInfo(generationSignature:String, block: String,
-  baseTarget:String, height: Long, blockReward: String,
+  baseTarget: String, height: Long, blockReward: String,
   generator: String, generatorRS: String,
   numberOfTransactions: String)
 
@@ -39,12 +38,13 @@ class MiningInfoUpdater extends Actor with ActorLogging {
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
           val temp = parse(body.utf8String).extract[MiningInfo]
+          // Update information if there is a new block
           if(temp.generationSignature != Global.miningInfo.generationSignature){
-            if(temp.generator == Config.ACCOUNT_ID){
-              Global.shareManager ! queueCurrentShares(
+            // Pay out shares if we mined the last block, dump them otherwise
+            temp.generator == Config.ACCOUNT_ID match {
+              case true => Global.shareManager ! queueCurrentShares(
                 new BigInteger(temp.block))
-            } else {
-              Global.shareManager ! dumpCurrentShares()
+              case false => Global.shareManager ! dumpCurrentShares()
             }
             Global.miningInfo = temp
             Global.deadlineSubmitter ! resetBestDeadline()

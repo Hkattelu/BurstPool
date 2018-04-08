@@ -1,5 +1,4 @@
 package com.github.Chronox.pool.actors
-
 import com.github.Chronox.pool.Global
 
 import akka.actor.{ Actor, ActorLogging }
@@ -7,7 +6,6 @@ import akka.http.scaladsl.model._
 import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
 import scala.util.{ Failure, Success }
 import scala.concurrent.duration._
-
 import hash.Shabal256
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -41,7 +39,7 @@ class DeadlineChecker extends Actor with ActorLogging {
     md.reset()
     val seedBuffer = ByteBuffer.allocate(40)
     var genSigBytes = new BigInteger(
-        Global.miningInfo.generationSignature, 16).toByteArray
+      Global.miningInfo.generationSignature, 16).toByteArray
     seedBuffer.put(genSigBytes)
     seedBuffer.putLong(Global.miningInfo.height)
     md.update(seedBuffer.array())

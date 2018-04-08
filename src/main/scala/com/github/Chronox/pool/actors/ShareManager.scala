@@ -1,5 +1,4 @@
 package com.github.Chronox.pool.actors
-
 import com.github.Chronox.pool.Global
 import com.github.Chronox.pool.Config
 import com.github.Chronox.pool.db.{User, Reward, Share}
@@ -12,7 +11,6 @@ import scala.concurrent.duration._
 import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConversions._
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import java.lang.Long
 import java.math.BigInteger
 import scala.math.BigDecimal.RoundingMode
@@ -32,8 +30,10 @@ class ShareManager extends Actor with ActorLogging {
     case addShare(user: User, blockId: BigInteger, 
       nonce: Long, deadline: Long) => {
       val share: Share = new Share(user.id, blockId, nonce, deadline)
-      if (currentShares contains user) currentShares(user) = share
-      else currentShares += (user->share)
+      currentShares contains user match {
+        case true => currentShares(user) = share
+        case false => currentShares += (user->share)
+      } 
     }
     case dumpCurrentShares() => {
       historicShareQueue.enqueue(currentShares clone)
