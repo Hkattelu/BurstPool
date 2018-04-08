@@ -49,27 +49,23 @@ with JacksonJsonSupport with FutureSupport {
               .mapTo[BigInteger]
             deadline = Await.result(deadlineFuture, timeout.duration)
             if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
-              Global.poolStatistics.incrementValidNonces()
               // Add user if we haven't seen this IP before
-              // TODO: COndense this
-              val containsUserFuture: Future[Any] = 
-                Global.userManager ? containsUser(ip)
-              containsUserFuture onSuccess {
-                case Some(result) => {
-                  if(!result.asInstanceOf[Boolean])
-                    Global.userManager ! addUser(ip, accId)
+              val userFuture = (Global.userManager ? addUser(ip, accId))
+              userFuture.mapTo[Option[User]] onSuccess {
+                case Some(user) => {
+                  // Submit nonce if it is better than the pool's current best
+                  if(deadline.compareTo(Global.currentBestDeadline) <= 0)
+                    Global.deadlineSubmitter ! submitNonce(
+                      user, nonce, deadline)
+                  Global.poolStatistics.incrementValidNonces()
+                  Global.userManager ! updateSubmitTime(ip)
+                  response.getWriter.println("Deadline submission successful")
+                  response.getWriter.println("Deadline: " + deadline.toString())
                 }
+                // User is banned, just return an error
+                case None => response.getWriter.println(
+                  "You are currently banned and cannot submit nonces.")
               }
-              // Get the user from the manager
-              var user: User = null
-              val userFuture = (Global.userManager ? getUser(ip)).mapTo[User]
-              user = Await.result(userFuture, timeout.duration)
-
-              // Submit nonce if it is better than the pool's currentbest
-              if(deadline.compareTo(Global.currentBestDeadline) <= 0)
-                Global.deadlineSubmitter ! submitNonce(user, nonce, deadline)
-              Global.userManager ! updateSubmitTime(ip)
-              response.getWriter().println("Deadline successfully submitted")
             } else {
               Global.userManager ! banUser(ip,
                 LocalDateTime.now().plusMinutes(Config.BAN_TIME))
@@ -78,7 +74,6 @@ with JacksonJsonSupport with FutureSupport {
               response.getWriter().println(
                 "You submitted a bad deadline, and are now temporarily banned")
             }
-            response.getWriter().println("Deadline: " + deadline.toString())
           } catch {
             case e: NoSuchElementException => {
               response.setStatus(400)

@@ -32,6 +32,7 @@ class UserManager extends Actor with ActorLogging {
     }
     case addUser(ip_address: String, accountId: Long) => {
       // Add user with given IP and accountId if the IP wasn't banned
+      var userToReturn: Option[User] = Option(null)
       if (!(bannedAddresses contains ip_address)){
         var newUser = new User
         newUser.isActive = true
@@ -42,7 +43,9 @@ class UserManager extends Actor with ActorLogging {
         activeUsers += (ip_address->newUser)
         Global.poolStatistics.incrementActiveUsers()
         Global.poolStatistics.addActiveTB(newUser.reported_TB)
+        userToReturn = Some(newUser)
       }
+      sender ! userToReturn
     }
     case getUser(ip: String) => {
       sender ! activeUsers.getOrElse(ip, null)

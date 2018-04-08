@@ -119,6 +119,10 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     Await.result(future, timeout.duration).toSet should equal (percents.toSet)
   }
 
+  test("Rewards") {
+    
+  }
+
   test("Adding Users pool statistics"){
     Global.poolStatistics.numActiveUsers.get() should equal (0)
     Global.poolStatistics.numTotalUsers.get() should equal (0)
@@ -143,8 +147,10 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
   }
 
   test("Banning a user"){
-    Global.userManager ! banUser("6", LocalDateTime.now().plusSeconds(2))
+    Global.userManager ! banUser("6", LocalDateTime.now().plusSeconds(5))
     Global.userManager ! addUser("6", 2)
+
+    Thread.sleep(100)
     val future = (Global.userManager ? containsUser("6")).mapTo[Boolean]
     Await.result(future, timeout.duration) should equal (false)
   }
@@ -153,6 +159,8 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     Global.userManager ! banUser("7", LocalDateTime.now().minusSeconds(1))
     Global.userManager ! refreshUsers()
     Global.userManager ! addUser("7", 2)
+
+    Thread.sleep(100)
     val future = (Global.userManager ? containsUser("7")).mapTo[Boolean]
     Await.result(future, timeout.duration) should equal (true)
   }
