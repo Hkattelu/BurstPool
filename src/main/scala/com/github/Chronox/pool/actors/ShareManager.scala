@@ -11,14 +11,12 @@ import scala.concurrent.duration._
 import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConversions._
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.lang.Long
-import java.math.BigInteger
 import scala.math.BigDecimal.RoundingMode
 
-case class addShare(user: User, blockId: BigInteger,
+case class addShare(user: User, blockId: Long,
   nonce: Long, deadline: Long)
 case class dumpCurrentShares()
-case class queueCurrentShares(blockId: BigInteger)
+case class queueCurrentShares(blockId: Long)
 case class getCurrentPercents()
 case class getAverageHistoricalPercents()
 
@@ -27,9 +25,9 @@ class ShareManager extends Actor with ActorLogging {
   val one = BigDecimal.valueOf(1)
 
   def receive() = {
-    case addShare(user: User, blockId: BigInteger, 
+    case addShare(user: User, blockId: Long, 
       nonce: Long, deadline: Long) => {
-      val share: Share = new Share(user.id, blockId, nonce, deadline)
+      val share: Share = new Share(user.id, blockId, nonce, Some(deadline))
       currentShares contains user match {
         case true => currentShares(user) = share
         case false => currentShares += (user->share)
@@ -39,7 +37,7 @@ class ShareManager extends Actor with ActorLogging {
       historicShareQueue.enqueue(currentShares clone)
       currentShares.clear()
     }
-    case queueCurrentShares(blockId: BigInteger) => {
+    case queueCurrentShares(blockId: Long) => {
       Global.rewardPayout ! addRewards(blockId, 
         sharesToRewardPercents(currentShares.toMap), 
         historicShareQueue.getPercents())
@@ -57,7 +55,8 @@ class ShareManager extends Actor with ActorLogging {
   def sharesToRewardPercents(weights: Map[User, Share]): 
     Map[Long, BigDecimal] = {
     val inverseWeights = weights.map{case (k,v) => (k.id, 
-      one/BigDecimal.valueOf(v.deadline))}.asInstanceOf[Map[Long, BigDecimal]]
+      one/BigDecimal.valueOf(v.deadline.get))}
+      .asInstanceOf[Map[Long, BigDecimal]]
     val inverseSum = inverseWeights.values.sum
     return inverseWeights.map{case(k,v) => (
       k, (v/inverseSum).setScale(8, RoundingMode.HALF_EVEN))}

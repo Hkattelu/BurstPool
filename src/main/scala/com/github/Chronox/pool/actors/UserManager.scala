@@ -37,12 +37,12 @@ class UserManager extends Actor with ActorLogging {
         var newUser = new User
         newUser.isActive = true
         newUser.id = accountId
-        newUser.reported_TB = 0.0
+        //newUser.reported_TB = 0.0
         newUser.lastSubmitTime = LocalDateTime.now()
         newUser.lastSubmitHeight = Global.miningInfo.height
         activeUsers += (ip_address->newUser)
         Global.poolStatistics.incrementActiveUsers()
-        Global.poolStatistics.addActiveTB(newUser.reported_TB)
+        //Global.poolStatistics.addActiveTB(newUser.reported_TB)
         userToReturn = Some(newUser)
       }
       sender ! userToReturn
@@ -73,7 +73,7 @@ class UserManager extends Actor with ActorLogging {
       if (activeUsers.size != prevNum){
         Global.poolStatistics.resetActiveTB()
         for ((k,v) <- activeUsers) {
-          Global.poolStatistics.addActiveTB(v.reported_TB)
+          //Global.poolStatistics.addActiveTB(v.reported_TB)
         }
       }
     }

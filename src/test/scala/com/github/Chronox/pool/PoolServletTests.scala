@@ -19,9 +19,11 @@ import java.lang.Long
 import java.math.BigInteger
 import scala.math.BigDecimal.RoundingMode
 
-class PoolServletTests extends ScalatraSuite with FunSuiteLike{
+class PoolServletTests extends ScalatraSuite 
+  with FunSuiteLike with DatabaseInit {
 
   Config.init()
+  configureDb()
   val system = ActorSystem()
   Global.stateUpdater = system.actorOf(Props[StateUpdater])
   Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
@@ -84,8 +86,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     for(i <- 1 to 4) {
       percents += (i.toLong->(fraction/BigDecimal.valueOf(1 << i))
         .setScale(8, RoundingMode.HALF_EVEN))
-      Global.shareManager ! addShare(new User(i), 
-        BigInteger.valueOf(0), 0, 1 << i)
+      Global.shareManager ! addShare(new User(i), 0, 0, 1 << i)
     }
     val future = (Global.shareManager ? getCurrentPercents()
       ).mapTo[Map[Long, BigDecimal]]
@@ -103,15 +104,14 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
         .setScale(8, RoundingMode.HALF_EVEN))
 
     //Add a bunch of random shares that should get overwrriten
-    Global.shareManager ! addShare(users(1), BigInteger.valueOf(0), 0, 2018)
-    Global.shareManager ! addShare(users(2), BigInteger.valueOf(0), 0, 9001)
-    Global.shareManager ! addShare(users(3), BigInteger.valueOf(0), 0, 1234)
-    Global.shareManager ! addShare(users(4), BigInteger.valueOf(0), 0, 1337)
+    Global.shareManager ! addShare(users(1), 0, 0, 2018)
+    Global.shareManager ! addShare(users(2), 0, 0, 9001)
+    Global.shareManager ! addShare(users(3), 0, 0, 1234)
+    Global.shareManager ! addShare(users(4), 0, 0, 1337)
     Global.shareManager ! dumpCurrentShares()
 
     for(i <- 1 to (Config.MIN_HEIGHT_DIFF + 100)){ 
-      for(j <- 1 to 4) Global.shareManager ! addShare(users(j), 
-        BigInteger.valueOf(0), 0, 1 << j)
+      for(j <- 1 to 4) Global.shareManager ! addShare(users(j), 0, 0, 1 << j)
       Global.shareManager ! dumpCurrentShares()
     }
     val future = (Global.shareManager ? getAverageHistoricalPercents()
@@ -119,8 +119,22 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
     Await.result(future, timeout.duration).toSet should equal (percents.toSet)
   }
 
-  test("Rewards") {
-    
+  test("Deadline submission fails if deadline is wrong"){
+  }
+
+  test("Deadline submission succeeeds on good deadline"){
+  }
+
+  test("Best deadline is overwritten on better deadline"){
+  }
+
+  test("Adding Rewards to payout"){
+  }
+
+  test("Rewards don't get lost on network error"){
+  }
+
+  test("Reward Transactions are properly created"){
   }
 
   test("Adding Users pool statistics"){
@@ -189,6 +203,7 @@ class PoolServletTests extends ScalatraSuite with FunSuiteLike{
 
   override def afterAll() {
     system.terminate()
+    closeDbConnection()
     super.afterAll()
   }
 }

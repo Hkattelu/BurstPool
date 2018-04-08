@@ -14,10 +14,9 @@ import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 import net.liftweb.json._
 import HttpMethods._
-import java.lang.Long
 import java.math.BigInteger
 
-case class addRewards(blockId: BigInteger, 
+case class addRewards(blockId: Long, 
   currentSharePercents: Map[Long, BigDecimal],
   historicSharePercents: Map[Long, BigDecimal])
 case class getRewards()
@@ -35,7 +34,7 @@ class RewardPayout extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
   final implicit val timeout: Timeout = 4 seconds
 
-  var rewardsToPay = TrieMap[BigInteger, List[Reward]]()
+  var rewardsToPay = TrieMap[Long, List[Reward]]()
   val burstToNQT = 100000000L
   val http = Http(context.system)
   val baseTxURI = (Config.NODE_ADDRESS + 
@@ -45,7 +44,7 @@ class RewardPayout extends Actor with ActorLogging {
 
   def receive() = {
     case PayoutRewards() => {
-      var blockToNQT = scala.collection.mutable.Map[BigInteger, Long]()
+      var blockToNQT = scala.collection.mutable.Map[Long, Long]()
       var userToRewards = scala.collection.mutable.Map[Long, List[Reward]]()
       var responseFutureList = List[Future[HttpResponse]]()
 
@@ -59,9 +58,9 @@ class RewardPayout extends Actor with ActorLogging {
         Await.ready(future, timeout.duration).value.get match {
           case Success(res: HttpResponse) => {
             val blockRes = parse(res.entity.toString()).extract[BlockResponse]
-            val rewardNQT = (Long.parseUnsignedLong(blockRes.totalAmountNQT) +
-              Long.parseUnsignedLong(blockRes.totalFeeNQT))
-            val blockId = new BigInteger(blockRes.block)
+            val rewardNQT = blockRes.totalAmountNQT.toLong +
+              blockRes.totalFeeNQT.toLong
+            val blockId = blockRes.block.toLong
 
             // Paid out blockNQT is the block value subtracted from pool fee
             blockToNQT += (blockId->((1-Config.POOL_FEE) * rewardNQT).toLong)
@@ -116,7 +115,7 @@ class RewardPayout extends Actor with ActorLogging {
         }
       }
     }
-    case addRewards(blockId: BigInteger, 
+    case addRewards(blockId: Long, 
       currentSharePercents: Map[Long, BigDecimal],
       historicSharePercents: Map[Long, BigDecimal]) => {
       // Add historical rewards for the block

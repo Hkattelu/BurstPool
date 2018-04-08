@@ -49,7 +49,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
           case Success(res: HttpResponse) => {
             // Check to see if the network calculated the same deadline as us
             val result = parse(res.entity.toString()).extract[SubmitResult]
-            deadline == (new BigInteger(result.deadline, 10)) match {
+            deadline == (new BigInteger(result.deadline)) match {
               case true => {  
                 log.info("Deadline successfully submitted")
                 user.lastSubmitTime = LocalDateTime.now()
@@ -59,7 +59,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
                   // Can convert bigint deadline to long because it's less than
                   // the target deadline
                   Global.shareManager ! addShare(user, 
-                    new BigInteger(Global.miningInfo.block, 10),
+                    Global.miningInfo.block.toLong,
                     nonce, deadline.longValue())
                 }
               }

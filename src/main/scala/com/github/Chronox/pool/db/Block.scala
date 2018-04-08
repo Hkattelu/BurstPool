@@ -1,18 +1,16 @@
 package com.github.Chronox.pool.db
-
-import java.time.LocalDate
+import org.squeryl.KeyedEntity
+import java.time.LocalDateTime
 
 class Block (
-  var rewardId: Long,
+  var id: Long,
   var height: Long,
-  var deadline: Long,
+  var deadline: Option[Long],
   var difficulty: Long,
   var baseTarget: Long,
-  var generator: String,
+  var generator: Option[Long],
   var generationSig: String,
-  var blockSig: String,
-  var rewardAssignment: String,
-  var timeSubmitted: LocalDate
-  ) {
-  def this() = this(0, 0, 0, 0, 0, null, null, null, null, null)
+  var timeSubmitted: Option[LocalDateTime]
+  ) extends KeyedEntity[Long] {
+  def this() = this(0, 0, null, 0, 0, null, null, null)
 }

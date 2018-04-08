@@ -1,4 +1,4 @@
-package org.scalatra.example.data.db
+package com.github.Chronox.pool.db
 
 import org.squeryl.Session
 import org.squeryl.SessionFactory
