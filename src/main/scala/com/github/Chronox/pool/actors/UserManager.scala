@@ -36,6 +36,7 @@ class UserManager extends Actor with ActorLogging {
       if (!(bannedAddresses contains ip_address)){
         var newUser = new User
         newUser.isActive = true
+        newUser.ip = ip_address
         newUser.id = accountId
         //newUser.reported_TB = 0.0
         newUser.lastSubmitTime = LocalDateTime.now()

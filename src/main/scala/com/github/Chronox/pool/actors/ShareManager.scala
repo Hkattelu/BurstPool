@@ -12,6 +12,7 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConversions._
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.math.BigDecimal.RoundingMode
+import language.postfixOps
 
 case class addShare(user: User, blockId: Long,
   nonce: Long, deadline: Long)

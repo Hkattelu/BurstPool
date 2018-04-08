@@ -14,6 +14,7 @@ import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 import net.liftweb.json._
 import HttpMethods._
+import language.postfixOps
 import java.math.BigInteger
 
 case class addRewards(blockId: Long, 

@@ -10,6 +10,7 @@ import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
 import akka.util.ByteString
 import scala.concurrent.duration._
 import net.liftweb.json._
+import language.postfixOps
 
 case class StateTick()
 case class PayoutUsers()
