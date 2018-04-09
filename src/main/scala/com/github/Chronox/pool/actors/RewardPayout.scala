@@ -35,7 +35,7 @@ class RewardPayout extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
   final implicit val timeout: Timeout = 4 seconds
 
-  var rewardsToPay = TrieMap[Long, List[Reward]]()
+  var unpaidRewards = TrieMap[Long, List[Reward]]()
   val burstToNQT = 100000000L
   val http = Http(context.system)
   val baseTxURI = (Config.NODE_ADDRESS + 
@@ -50,7 +50,7 @@ class RewardPayout extends Actor with ActorLogging {
       var responseFutureList = List[Future[HttpResponse]]()
 
       // Send out requests for block reward information
-      for((blockId, rewards) <- rewardsToPay) 
+      for((blockId, rewards) <- unpaidRewards) 
         http.singleRequest(HttpRequest(uri = baseBlockURI+blockId.toString()))
           .mapTo[HttpResponse] :: responseFutureList
 
@@ -67,7 +67,7 @@ class RewardPayout extends Actor with ActorLogging {
             blockToNQT += (blockId->((1-Config.POOL_FEE) * rewardNQT).toLong)
 
             // Note the rewards that each user should be getting paid
-            for(reward <- rewardsToPay.getOrElse(blockId, List[Reward]())) {
+            for(reward <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
               if (userToRewards contains reward.userId) 
                 reward :: userToRewards(reward.userId)
               else 
@@ -130,8 +130,8 @@ class RewardPayout extends Actor with ActorLogging {
           case null => rewards += (
             id->(new Reward(id, blockId, percent, 0.0, false)))
         } 
-      rewardsToPay += (blockId->rewards.values.toList)
+      unpaidRewards += (blockId->rewards.values.toList)
     }
-    case getRewards() => sender ! rewardsToPay.toMap
+    case getRewards() => sender ! unpaidRewards.toMap
   }
 }

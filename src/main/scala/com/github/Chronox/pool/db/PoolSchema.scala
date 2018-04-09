@@ -28,7 +28,7 @@ object PoolSchema extends Schema {
     b.generator is (indexed),
     b.height is (unique, indexed)))
   on(rewards)(r => declare(columns(r.userId, r.blockId) are (indexed)))
-  on(shares)(s => declare(columns(s.userId, s.blockId) are (indexed)))
+  on(shares)(s => declare(columns(s.blockId, s.userId) are (indexed)))
 
   // One to many relations
   val usersToShares = oneToManyRelation(users, shares).via(
@@ -53,32 +53,52 @@ object PoolSchema extends Schema {
   // Queries
   def loadActiveUsers(): TrieMap[String, User] = {
     var activeUsers = TrieMap[String, User]()
-    for (activeUser <- users.where(u => u.isActive === true))
-      activeUsers += (activeUser.ip->activeUser)
+    transaction {
+      for (activeUser <- users.where(u => u.isActive === true))
+        activeUsers += (activeUser.ip->activeUser)
+    }
     return activeUsers
   }
 
-  // TODO: fix this
   def loadHistoricShares(): ConcurrentLinkedQueue[TrieMap[Long, Share]] = {
     var historicQueue = new ConcurrentLinkedQueue[TrieMap[Long, Share]]()
-    var historicBlocks = blocks.where(
-      // b => b.height > Global.miningInfo.height - Config.MIN_HEIGHT_DIFF
-      b => b.height === 0
-      ).toList
-    for(block <- historicBlocks){
-      var userShares = TrieMap[Long, Share]()
-      for(share <- shares.where(s => s.blockId === block.id).toList)
-        userShares += (share.userId->share)      
-      historicQueue.add(userShares)
-    }
+      for(i <- 1 to Config.MIN_HEIGHT_DIFF) {
+        transaction {   
+          val block = blocks.where(
+            b => b.height === (Global.miningInfo.height - i)).single
+          var userShares = TrieMap[Long, Share]()
+          if (block != None) {
+            for(share <- shares.where(s => s.blockId === block.id).toList)
+              userShares += (share.userId->share)   
+          }
+          historicQueue.add(userShares)
+        }   
+      }
     return historicQueue
   }
 
   def loadCurrentShares(): TrieMap[Long, Share] = {
-    return null
+    var userShares = TrieMap[Long, Share]()
+    val block = blocks.where(
+      b => b.height === (Global.miningInfo.height - 1)).single
+    if (block != None) {
+      for(share <- shares.where(s => s.blockId === block.id).toList)
+        userShares += (share.userId->share)   
+    }
+    return userShares
   }
 
-  def loadRewardShares() {}
-
-  def loadBlockToNQTMap() {}
+  def loadRewardShares() {
+    var rewardsToPay = TrieMap[Long, List[Reward]]()
+    transaction {
+      var rewardList = rewards.where(r => r.isPaid === false).toList
+      for (reward <- rewardList) {
+        (rewardsToPay contains reward.userId) match {
+          case true => reward :: rewardsToPay(reward.userId)
+          case false => rewardsToPay += (reward.userId->List[Reward](reward))
+        }
+      }
+    }
+    return rewardsToPay
+  }
 }
