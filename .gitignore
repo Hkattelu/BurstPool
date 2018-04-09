@@ -5,26 +5,8 @@
 *.swp
 *.out
 
-# rails specific
-*.sqlite3
-config/database.yml
-log/*
-tmp/*
-
 # java specific
 *.class
-
-# python specific
-*.pyc
-
-# xcode/iphone specific
-build/*
-*.pbxuser
-*.mode2v3
-*.mode1v3
-*.perspective
-*.perspectivev3
-*~.nib
 
 # akka specific
 logs/*
@@ -65,5 +47,6 @@ jrebel.lic
 .*.sw?
 .idea
 
-# paulp script
-/.lib/
+# configurations
+src/main/resources/config.json
+src/test/resources/config.json
