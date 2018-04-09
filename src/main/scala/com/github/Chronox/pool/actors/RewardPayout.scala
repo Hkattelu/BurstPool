@@ -1,5 +1,5 @@
 package com.github.Chronox.pool.actors
-import com.github.Chronox.pool.Config
+import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.db.{Share, Reward}
 
 import akka.actor.{ Actor, ActorLogging }

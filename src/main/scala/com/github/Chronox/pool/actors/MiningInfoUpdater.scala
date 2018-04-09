@@ -12,10 +12,6 @@ import java.time.LocalDateTime
 import java.math.BigInteger
 
 case class getNewBlock()
-case class MiningInfo(generationSignature:String, block: String,
-  baseTarget: String, height: Long, blockReward: String,
-  generator: String, generatorRS: String,
-  numberOfTransactions: String)
 
 class MiningInfoUpdater extends Actor with ActorLogging {
 
@@ -37,7 +33,7 @@ class MiningInfoUpdater extends Actor with ActorLogging {
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          val temp = parse(body.utf8String).extract[MiningInfo]
+          val temp = parse(body.utf8String).extract[Global.MiningInfo]
           // Update information if there is a new block
           if(temp.generationSignature != Global.miningInfo.generationSignature){
             // Pay out shares if we mined the last block, dump them otherwise

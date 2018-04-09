@@ -25,6 +25,7 @@ libraryDependencies ++= Seq(
   "org.scalatra" %% "scalatra-json" % ScalatraVersion,
   "org.json4s"   %% "json4s-jackson" % "3.6.0-M2",
   "org.squeryl" %% "squeryl" % "0.9.5-7",
+  "org.scalaj" % "scalaj-http_2.11" % "2.3.0",
   "mysql" % "mysql-connector-java" % "5.1.10",
   "c3p0" % "c3p0" % "0.9.1.2"
 )

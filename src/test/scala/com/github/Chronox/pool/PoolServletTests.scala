@@ -192,7 +192,7 @@ class PoolServletTests extends ScalatraSuite
     // Hardcoded constants, should work
     val accId = "13606764479022549485"
     val nonce = "2801024039"
-    Global.miningInfo = new MiningInfo( 
+    Global.miningInfo = new Global.MiningInfo( 
       "6acc1e02f47ef19ab24c2e0ca2af866e7a36afa9f18c6fe4a7300c125a862d5c",
       null, "59301", 476779L, null, null, null, null)
     get("/burst", Map("requestType" -> "submitNonce",

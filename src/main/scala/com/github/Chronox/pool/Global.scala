@@ -22,4 +22,9 @@ object Global {
   var miningInfo: MiningInfo = MiningInfo(
     null, null, null, 0L, null, null, null, null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
+
+  case class MiningInfo(generationSignature:String, block: String,
+    baseTarget: String, height: Long, blockReward: String,
+    generator: String, generatorRS: String,
+    numberOfTransactions: String)
 }
