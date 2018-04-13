@@ -88,7 +88,8 @@ class ShareManager extends Actor with ActorLogging {
         for ((id, percent) <- sharesToRewardPercents(
           iterator.next().toMap[Long, Share])) {
           (netHistoricPercents contains id) match {
-            case true => percent :: netHistoricPercents(id)
+            case true => netHistoricPercents(id) = 
+              percent :: netHistoricPercents(id)
             case false => netHistoricPercents += (id->List[BigDecimal](percent))
           }
         }

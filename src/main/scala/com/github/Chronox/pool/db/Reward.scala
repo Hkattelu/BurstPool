@@ -13,4 +13,15 @@ class Reward (
   def id = compositeKey(userId, blockId)
   def this() = this(0, 0, BigDecimal.valueOf(0), 
     BigDecimal.valueOf(0), false)
+  def canEqual(a: Any) = a.isInstanceOf[Reward]
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: Reward => that.canEqual(this) && this.hashCode == that.hashCode
+      case _ => false
+    }
+  override def hashCode: Int = {
+    var result = userId.hashCode ^ blockId.hashCode ^ 
+      currentPercent.hashCode ^ historicalPercent.hashCode
+    return (if (isPaid) ~result else result)
+  }
 }

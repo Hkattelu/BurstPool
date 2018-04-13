@@ -6,6 +6,8 @@ import com.github.Chronox.pool.servlets._
 import com.github.Chronox.pool.db._
 import akka.util.Timeout
 import akka.pattern.ask
+import scala.collection.mutable.ListBuffer
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
@@ -15,7 +17,6 @@ import org.scalatra._
 import _root_.akka.actor.{Props, ActorSystem}
 import scalaj.http.Http
 import net.liftweb.json._
-import java.lang.Long
 import java.time.LocalDateTime
 import java.math.BigInteger
 import scala.math.BigDecimal.RoundingMode
@@ -43,15 +44,21 @@ class PoolServletTests extends ScalatraSuite
   
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
+  addServlet(classOf[MockBurstServlet], "/test")
   addServlet(new BurstServlet(system), "/burst")
 
   implicit val formats = DefaultFormats
   protected implicit def executor: ExecutionContext = system.dispatcher
   protected implicit val timeout: Timeout = 5 seconds
 
+  val zero = BigDecimal.valueOf(0)
+  val quarter = BigDecimal.valueOf(0.25)
+  val one = BigDecimal.valueOf(1)
+
   override def beforeAll(){
     Config.init()
     //configureDb()
+    // Hardcoded for testing
     Global.miningInfo = new Global.MiningInfo(
       "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
       "54752", "478972")
@@ -102,7 +109,9 @@ class PoolServletTests extends ScalatraSuite
 
   test("Simple Shares to Reward calculation"){
     var weights = Map[User, Share]()
-    var percents = Map[scala.Long, BigDecimal]()
+    var percents = Map[Long, BigDecimal]()
+
+    // Add some shares, then calculate reward split of those shares
     val fraction = BigDecimal.valueOf(16)/BigDecimal.valueOf(15)
     for(i <- 1 to 4) {
       percents += (i.toLong->(fraction/BigDecimal.valueOf(1 << i))
@@ -116,7 +125,7 @@ class PoolServletTests extends ScalatraSuite
 
   test("Historical Shares to Reward calculation (over the historical limit)"){
     var weights = Map[User, Share]()
-    var percents = Map[scala.Long, BigDecimal]()
+    var percents = Map[Long, BigDecimal]()
     var users = Map[Int, User]()
     val fraction = BigDecimal.valueOf(16)/BigDecimal.valueOf(15)
     for(i <- 1 to 4) users += (i->(new User(i)))
@@ -124,26 +133,43 @@ class PoolServletTests extends ScalatraSuite
       percents += (i.toLong->(fraction/BigDecimal.valueOf(1 << i))
         .setScale(8, RoundingMode.HALF_EVEN))
 
-    //Add a bunch of random shares that should get overwrriten
+    // Add a bunch of random shares
     Global.shareManager ! addShare(users(1), 0, 0, 2018)
     Global.shareManager ! addShare(users(2), 0, 0, 9001)
     Global.shareManager ! addShare(users(3), 0, 0, 1234)
     Global.shareManager ! addShare(users(4), 0, 0, 1337)
     Global.shareManager ! dumpCurrentShares()
 
+    // Save 100+ shares to historic shares, they'll overwrite the random shares
     for(i <- 1 to (Config.MIN_HEIGHT_DIFF + 100)){ 
       for(j <- 1 to 4) Global.shareManager ! addShare(users(j), 0, 0, 1 << j)
-      Global.shareManager ! dumpCurrentShares()
+        Global.shareManager ! dumpCurrentShares()
     }
     val future = (Global.shareManager ? getAverageHistoricalPercents()
       ).mapTo[Map[Long, BigDecimal]]
     Await.result(future, timeout.duration).toSet should equal (percents.toSet)
   }
 
-  test("Best deadline is overwritten on better deadline"){
+  test("Rewards accumulate properly"){
+    var current = Map[Long, BigDecimal]()
+    var historic = Map[Long, BigDecimal]()
+    for(i <- 1 to 4) historic += (i.toLong->quarter)
+    current += (5.toLong->one)
+    Global.rewardPayout ! addRewards(1, current, historic)
+    val future = (Global.rewardPayout ? getRewards())
+      .mapTo[Map[Long, List[Reward]]]
+    val calculated = Await.result(future, timeout.duration)
+    var rewards = Map[Long, List[Reward]]()
+    var rewardList = new ListBuffer[Reward]()
+    for(i <- 1 to 4) 
+      rewardList += (new Reward(i, 1, zero, quarter,false))
+    rewardList += (new Reward(5, 1, one, zero, false))
+    rewards += (1L->rewardList.toList)
+    calculated.values.head.toSet should equal (rewards.values.head.toSet)
+    Global.rewardPayout ! clearRewards()
   }
 
-  test("Adding Rewards to payout"){
+  test("Best deadline is overwritten on better deadline"){
   }
 
   test("Rewards don't get lost on network error"){
@@ -162,12 +188,11 @@ class PoolServletTests extends ScalatraSuite
 
   test("Adding Users pool statistics"){
     Global.userManager ! resetUsers()
-    Thread.sleep(50)
 
+    // Adding 5 users should set activeUsers to 5
     Global.poolStatistics.numActiveUsers.get() should equal (0)
     Global.poolStatistics.numTotalUsers.get() should equal (0)
     for(i <- 1 to 5) Global.userManager ? addUser(i.toString(), i.toLong)
-
     Thread.sleep(50)
     Global.poolStatistics.numTotalUsers.get() should equal (5)
     Global.poolStatistics.numActiveUsers.get() should equal (5)
@@ -175,13 +200,13 @@ class PoolServletTests extends ScalatraSuite
 
   test("Banning Users pool statistics"){
     Global.userManager ! resetUsers()
-    Thread.sleep(50)
 
-    Global.poolStatistics.numActiveUsers.get() should equal (0)
+    // Banning a user should increment bannedAddresses
     Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
 
     Thread.sleep(50)
     Global.poolStatistics.numBannedAddresses.get() should equal (1)
+    Global.poolStatistics.numActiveUsers.get() should equal (0)
     Global.poolStatistics.numTotalUsers.get() should equal (0)
     Global.userManager ! refreshUsers()
 
@@ -191,8 +216,8 @@ class PoolServletTests extends ScalatraSuite
 
   test("Banning a user"){
     Global.userManager ! resetUsers()
-    Thread.sleep(50)
 
+    // Should not be able to add a user who's IP is banned
     Global.userManager ! banUser("1", LocalDateTime.now().plusSeconds(5))
     Global.userManager ? addUser("1", 1)
 
@@ -202,8 +227,8 @@ class PoolServletTests extends ScalatraSuite
 
   test("Unbanning a user"){
     Global.userManager ! resetUsers()
-    Thread.sleep(50)
 
+    // Unbanning a banned user, and then checking if they exist should work
     Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
     Global.userManager ! refreshUsers()
     Global.userManager ? addUser("1", 2)
