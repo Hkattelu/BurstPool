@@ -24,14 +24,22 @@ class PoolServletTests extends ScalatraSuite
   with FunSuiteLike with DatabaseInit {
 
   val system = ActorSystem()
-  Global.stateUpdater = system.actorOf(Props[StateUpdater])
-  Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
-  Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
-  Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
-  Global.deadlineChecker = system.actorOf(Props[DeadlineChecker])
-  Global.userManager = system.actorOf(Props[UserManager])
-  Global.shareManager = system.actorOf(Props[ShareManager])
-  Global.rewardPayout = system.actorOf(Props[RewardPayout])
+  Global.stateUpdater = 
+    system.actorOf(Props[StateUpdater], name="StateUpdater")
+  Global.burstPriceChecker = 
+    system.actorOf(Props[BurstPriceChecker], name = "BurstPriceChecker")
+  Global.miningInfoUpdater = 
+    system.actorOf(Props[MiningInfoUpdater], name = "MiningInfoUpdater")
+  Global.deadlineSubmitter = 
+    system.actorOf(Props[DeadlineSubmitter], name = "DeadlienSubmitter")
+  Global.deadlineChecker = 
+    system.actorOf(Props[DeadlineChecker], name = "DeadlineChecker")
+  Global.userManager = 
+    system.actorOf(Props[UserManager], name = "UserManager")
+  Global.shareManager = 
+    system.actorOf(Props[ShareManager], name = "ShareManager")
+  Global.rewardPayout = 
+    system.actorOf(Props[RewardPayout], name = "RewardPayout")
   
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
@@ -44,10 +52,10 @@ class PoolServletTests extends ScalatraSuite
   override def beforeAll(){
     Config.init()
     //configureDb()
-    val getBlockURI = Config.NODE_ADDRESS + "/burst"
-    val response = Http(getBlockURI)
-      .param("requestType", "getMiningInfo").asString.body
-    Global.miningInfo = parse(response).extract[Global.MiningInfo]
+    Global.miningInfo = new Global.MiningInfo(
+      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
+      "54752", "478972")
+    system.stop(Global.miningInfoUpdater)
     super.beforeAll()
   }
 
@@ -84,9 +92,6 @@ class PoolServletTests extends ScalatraSuite
     // Constants from block at height 478972
     val accId: Long = new BigInteger("7451808546734026404").longValue()
     val nonce: Long = new BigInteger("151379672").longValue()
-    Global.miningInfo = new Global.MiningInfo(
-      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
-      "54752", "478972")
     val future = (Global.deadlineChecker ? nonceToDeadline(accId, nonce))
       .mapTo[BigInteger]
     val deadline = Await.result(future, timeout.duration)
@@ -133,12 +138,6 @@ class PoolServletTests extends ScalatraSuite
     Await.result(future, timeout.duration).toSet should equal (percents.toSet)
   }
 
-  test("Deadline submission fails if deadline is wrong"){
-  }
-
-  test("Deadline submission succeeeds on good deadline"){
-  }
-
   test("Best deadline is overwritten on better deadline"){
   }
 
@@ -151,43 +150,63 @@ class PoolServletTests extends ScalatraSuite
   test("Reward Transactions are properly created"){
   }
 
+  test("Nonce submission adds shares"){
+
+  }
+
+  test("Nonce submission adds rewards"){
+
+  }
+
   test("Adding Users pool statistics"){
+    Global.userManager ! resetUsers()
+    Thread.sleep(50)
+
     Global.poolStatistics.numActiveUsers.get() should equal (0)
     Global.poolStatistics.numTotalUsers.get() should equal (0)
     for(i <- 1 to 5) Global.userManager ! addUser(i.toString(), i.toLong)
 
-    Thread.sleep(100)
+    Thread.sleep(50)
     Global.poolStatistics.numTotalUsers.get() should equal (5)
     Global.poolStatistics.numActiveUsers.get() should equal (5)
   }
 
   test("Banning Users pool statistics"){
-    Global.poolStatistics.numActiveUsers.get() should equal (5)
+    Global.userManager ! resetUsers()
+    Thread.sleep(50)
+
+    Global.poolStatistics.numActiveUsers.get() should equal (0)
     Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
 
-    Thread.sleep(100)
+    Thread.sleep(50)
     Global.poolStatistics.numBannedAddresses.get() should equal (1)
-    Global.poolStatistics.numTotalUsers.get() should equal (5)
+    Global.poolStatistics.numTotalUsers.get() should equal (0)
     Global.userManager ! refreshUsers()
 
-    Thread.sleep(100)
+    Thread.sleep(50)
     Global.poolStatistics.numBannedAddresses.get() should equal (0)
   }
 
   test("Banning a user"){
-    Global.userManager ! banUser("6", LocalDateTime.now().plusSeconds(5))
-    Global.userManager ! addUser("6", 2)
+    Global.userManager ! resetUsers()
+    Thread.sleep(50)
 
-    val future = (Global.userManager ? containsUser("6")).mapTo[Boolean]
+    Global.userManager ! banUser("1", LocalDateTime.now().plusSeconds(5))
+    Global.userManager ! addUser("1", 1)
+
+    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
     Await.result(future, timeout.duration) should equal (false)
   }
 
   test("Unbanning a user"){
-    Global.userManager ! banUser("7", LocalDateTime.now().minusSeconds(1))
-    Global.userManager ! refreshUsers()
-    Global.userManager ! addUser("7", 2)
+    Global.userManager ! resetUsers()
+    Thread.sleep(50)
 
-    val future = (Global.userManager ? containsUser("7")).mapTo[Boolean]
+    Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
+    Global.userManager ! refreshUsers()
+    Global.userManager ! addUser("1", 2)
+
+    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
     Await.result(future, timeout.duration) should equal (true)
   }
 
@@ -204,9 +223,6 @@ class PoolServletTests extends ScalatraSuite
     // Constants from block at height 478972
     val accId = "7451808546734026404"
     val nonce = "151379672"
-    Global.miningInfo = new Global.MiningInfo(
-      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
-      "54752", "478972")
     get("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
       "nonce"->nonce)) {
       status should equal (200)

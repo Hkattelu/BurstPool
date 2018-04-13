@@ -13,6 +13,13 @@ object PoolStatistics {
   var netActiveTB: BigDecimal = 0.0
   var lastSubmitTime: Timestamp = null
 
+  def resetPoolStatistics() {
+    resetCurrentStatistics()
+    numActiveUsers.set(0)
+    numTotalUsers.set(0)
+    numBannedAddresses.set(0)
+  }
+
   def resetCurrentStatistics() {
     numValidNonces.set(0)
     numBadNonces.set(0)

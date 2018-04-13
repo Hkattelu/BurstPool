@@ -17,6 +17,7 @@ import java.math.BigInteger
 
 case class resetBestDeadline()
 case class submitNonce(user: User, nonce: Long, deadline: BigInteger)
+case class Result(message: String)
 case class SubmitResult(result: String, deadline: String)
 
 class DeadlineSubmitter extends Actor with ActorLogging {
@@ -45,32 +46,55 @@ class DeadlineSubmitter extends Actor with ActorLogging {
         val ent = FormData(Map("secretPhrase"->Config.SECRET_PHRASE,
           "accountId"->user.id.toString, "nonce"->nonce.toString)).toEntity
         http.singleRequest(
-          HttpRequest(method = POST, uri = baseSubmitURI,
-            entity = ent)
+          HttpRequest(method = POST, uri = baseSubmitURI, entity = ent)
         ) onComplete {
           case Success(res: HttpResponse) => {
             // Check to see if the network calculated the same deadline as us
-            val result = parse(res.entity.toString()).extract[SubmitResult]
-            deadline == (new BigInteger(result.deadline)) match {
-              case true => {  
-                log.info("Deadline successfully submitted")
-                user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
-                user.lastSubmitHeight = Global.miningInfo.height.toLong
-                if(deadline.compareTo(Global.currentBestDeadline) <= 0){
+            val json = parse(res.entity.toString())
+            json.extract[Result].message match {
+              case Global.SUCCESS_MESSAGE => {  
+                if (json.extract[SubmitResult].deadline == deadline) {
+                  log.info("Deadline successfully submitted")
+                  user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
+                  user.lastSubmitHeight = Global.miningInfo.height.toLong
                   Global.currentBestDeadline = deadline
+                  Global.poolStatistics.incrementValidNonces()
+
                   // Can convert bigint deadline to long because it's less than
                   // the target deadline
                   Global.shareManager ! addShare(user, 
-                    Global.lastBlockInfo.block.toLong,
-                    nonce, deadline.longValue())
+                    Global.lastBlockInfo.block.toLong, nonce, 
+                    deadline.longValue())
+                  sender ! Result(Global.SUCCESS_MESSAGE)
+                } else {
+                  val e = "Response Deadline did not match calculated deadline"
+                  log.error(e)
+                  sender ! Result(e) 
                 }
               }
-              case false => log.error(
-                "Response Deadline did not match calculated deadline")
+              case (message: String) => {
+                val e = "Network did not accept deadline"
+                log.error(e)
+                sender ! Result(e)
+              }
             }
           }
-          case Failure(error) => log.error(error.toString())
+          case Failure(error) => {
+            log.error(error.toString())
+            sender ! Result(error.toString())
+          }
         }
+      } else {
+        log.info("Deadline successfully submitted")
+        user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
+        user.lastSubmitHeight = Global.miningInfo.height.toLong
+        Global.poolStatistics.incrementValidNonces()
+
+        // Can convert bigint deadline to long because it's less than
+        // the target deadline
+        Global.shareManager ! addShare(user, Global.lastBlockInfo.block.toLong,
+          nonce, deadline.longValue())
+        sender ! Result(Global.SUCCESS_MESSAGE)
       }
     }
   }

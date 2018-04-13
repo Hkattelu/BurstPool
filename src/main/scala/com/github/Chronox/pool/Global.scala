@@ -31,4 +31,6 @@ object Global {
     baseTarget: String, height: String, blockReward: String,
     generator: String, generatorRS: String,
     numberOfTransactions: String)
+
+  val SUCCESS_MESSAGE = "success"
 }

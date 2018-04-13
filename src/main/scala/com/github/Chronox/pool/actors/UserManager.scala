@@ -12,6 +12,7 @@ import scala.collection.concurrent.TrieMap
 import java.time.LocalDateTime
 import java.sql.Timestamp
 
+case class resetUsers()
 case class containsUser(ip_address: String)
 case class addUser(ip_address: String, accountId: Long)
 case class getUser(ip: String)
@@ -31,6 +32,11 @@ class UserManager extends Actor with ActorLogging {
   }
   
   def receive() = {
+    case resetUsers() => {
+      activeUsers.clear()
+      bannedAddresses.clear()
+      Global.poolStatistics.resetPoolStatistics()
+    }
     case containsUser(ip_address: String) => {
       sender ! ((activeUsers contains ip_address) && 
         !(bannedAddresses contains ip_address))

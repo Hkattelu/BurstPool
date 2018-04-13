@@ -13,6 +13,7 @@ import net.liftweb.json._
 import language.postfixOps
 
 case class StateTick()
+case class MiningStateTick()
 case class PayoutUsers()
 
 class StateUpdater extends Actor with ActorLogging {
@@ -24,7 +25,9 @@ class StateUpdater extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   override def preStart() {
-    context.system.scheduler.schedule(0 seconds, 3 seconds, self, StateTick())
+    context.system.scheduler.schedule(0 seconds, 1 minute, self, StateTick())
+    context.system.scheduler.schedule(
+      0 seconds, 2 seconds, self, MiningStateTick())
     context.system.scheduler.schedule(
       0 seconds, Config.PAY_TIME hours, self, PayoutUsers())
   }
@@ -32,9 +35,9 @@ class StateUpdater extends Actor with ActorLogging {
   def receive() = {
     case StateTick() => {
       Global.burstPriceChecker ! updateBurstPriceInfo()
-      Global.miningInfoUpdater ! getNewMiningInfo()
       Global.userManager ! refreshUsers()
     }
+    case MiningStateTick() => Global.miningInfoUpdater ! getNewMiningInfo()
     case PayoutUsers() => Global.rewardPayout ! PayoutRewards()
   }
 }
