@@ -2,12 +2,12 @@ package com.github.Chronox.pool.actors
 import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.db.{Share, Reward}
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
-import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
-import akka.util.Timeout
-import scala.util.{ Failure, Success }
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+import akka.util.{Timeout, ByteString}
+import scala.util.{Failure, Success}
 import scala.collection.concurrent.TrieMap
 import scala.collection.JavaConversions._
 import scala.concurrent.{Future, Await}
@@ -22,7 +22,7 @@ case class addRewards(blockId: Long,
   currentSharePercents: Map[Long, BigDecimal],
   historicSharePercents: Map[Long, BigDecimal])
 case class getRewards()
-case class BlockResponse(totalAmountNQT: String, 
+case class BlockResponse(blockReward: String, 
   totalFeeNQT: String, block: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
 case class PayoutRewards()
@@ -58,27 +58,30 @@ class RewardPayout extends Actor with ActorLogging {
       // Send out requests for block reward information
       for((blockId, rewards) <- unpaidRewards) 
         responseFutureList += http.singleRequest(HttpRequest(
-          uri = baseBlockURI+blockId.toString())).mapTo[HttpResponse]
+          uri = baseBlockURI + blockId.toString())).mapTo[HttpResponse]
 
       // Block until we get the responses, then handle them
       for(future <- responseFutureList.toList) {   
         Await.ready(future, timeout.duration).value.get match {
           case Success(res: HttpResponse) => {
-            val blockRes = parse(res.entity.toString()).extract[BlockResponse]
-            val rewardNQT = blockRes.totalAmountNQT.toLong +
-              blockRes.totalFeeNQT.toLong
-            val blockId = blockRes.block.toLong
+            res.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach 
+              { body =>
+              val blockRes = parse(body.utf8String).extract[BlockResponse]
+              val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
+                blockRes.totalFeeNQT.toLong
+              val blockId = blockRes.block.toLong
 
-            // Paid out blockNQT is the block value subtracted from pool fee
-            blockToNQT += (blockId->((1-Config.POOL_FEE) * rewardNQT).toLong)
+              // Paid out blockNQT is the block value subtracted from pool fee
+              blockToNQT += (blockId->((1-Config.POOL_FEE) * rewardNQT).toLong)
 
-            // Note the rewards that each user should be getting paid
-            for(reward <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
-              if (userToRewards contains reward.userId) 
-                reward :: userToRewards(reward.userId)
-              else 
-                userToRewards += (reward.userId->List[Reward](reward))
-            } 
+              // Note the rewards that each user should be getting paid
+              for(reward <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
+                if (userToRewards contains reward.userId) 
+                  reward :: userToRewards(reward.userId)
+                else 
+                  userToRewards += (reward.userId->List[Reward](reward))
+              } 
+            }
           }
           case Failure(e) => log.error(
             "Failed to receive block information:" + e.toString())

@@ -44,7 +44,7 @@ class PoolServletTests extends ScalatraSuite
   
   addServlet(classOf[PoolServlet], "/*")
   addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
-  addServlet(classOf[MockBurstServlet], "/test")
+  addServlet(new MockBurstServlet(system), "/test")
   addServlet(new BurstServlet(system), "/burst")
 
   implicit val formats = DefaultFormats
@@ -59,9 +59,6 @@ class PoolServletTests extends ScalatraSuite
     Config.init()
     //configureDb()
     // Hardcoded for testing
-    Global.miningInfo = new Global.MiningInfo(
-      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
-      "54752", "478972")
     system.stop(Global.miningInfoUpdater)
     super.beforeAll()
   }
@@ -101,6 +98,9 @@ class PoolServletTests extends ScalatraSuite
     // Constants from block at height 478972
     val accId: Long = new BigInteger("7451808546734026404").longValue()
     val nonce: Long = new BigInteger("151379672").longValue()
+    Global.miningInfo = new Global.MiningInfo(
+      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
+      "54752", "478972")
     val future = (Global.deadlineChecker ? nonceToDeadline(accId, nonce))
       .mapTo[BigInteger]
     val deadline = Await.result(future, timeout.duration)
@@ -169,21 +169,21 @@ class PoolServletTests extends ScalatraSuite
     Global.rewardPayout ! clearRewards()
   }
 
-  test("Best deadline is overwritten on better deadline"){
-  }
-
   test("Rewards don't get lost on network error"){
   }
 
-  test("Reward Transactions are properly created"){
+  test("Reward Transactions are successfully sent"){
   }
 
-  test("Nonce submission adds shares"){
+  test("Submitting a valid nonce adds Shares and sets best deadline"){
 
   }
 
-  test("Nonce submission adds rewards"){
+  test("Rewards are queue'd when mining information changes"){
 
+  }
+
+  test("Best deadline is overwritten on better deadline"){
   }
 
   test("Adding Users pool statistics"){
@@ -252,6 +252,9 @@ class PoolServletTests extends ScalatraSuite
     // Constants from block at height 478972
     val accId = "7451808546734026404"
     val nonce = "151379672"
+    Global.miningInfo = new Global.MiningInfo(
+      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
+      "54752", "478972")
     get("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
       "nonce"->nonce)) {
       body should include ("did not match calculated deadline")

@@ -31,6 +31,7 @@ object Global {
     baseTarget: String, height: String, blockReward: String,
     generator: String, generatorRS: String,
     numberOfTransactions: String)
+  case class ErrorMessage(errorCode: String, errorDescription: String)
 
   val SUCCESS_MESSAGE = "success"
 }
