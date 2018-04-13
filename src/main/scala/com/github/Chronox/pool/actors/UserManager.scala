@@ -10,6 +10,7 @@ import scala.util.{ Failure, Success }
 import scala.concurrent.duration._
 import scala.collection.concurrent.TrieMap
 import java.time.LocalDateTime
+import java.sql.Timestamp
 
 case class containsUser(ip_address: String)
 case class addUser(ip_address: String, accountId: Long)
@@ -21,10 +22,14 @@ case class updateSubmitTime(ip_address: String)
 
 class UserManager extends Actor with ActorLogging {
 
-  var activeUsers = TrieMap[String, User]()
+  var activeUsers: TrieMap[String, User] = TrieMap[String, User]()
   var bannedAddresses = TrieMap[String, LocalDateTime]()
   var netActiveTB = 0.0
 
+  override def preStart() {
+    // activeUsers = Global.poolDB.loadActiveUsers()
+  }
+  
   def receive() = {
     case containsUser(ip_address: String) => {
       sender ! ((activeUsers contains ip_address) && 
@@ -39,8 +44,8 @@ class UserManager extends Actor with ActorLogging {
         newUser.ip = ip_address
         newUser.id = accountId
         //newUser.reported_TB = 0.0
-        newUser.lastSubmitTime = LocalDateTime.now()
-        newUser.lastSubmitHeight = Global.miningInfo.height
+        newUser.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
+        newUser.lastSubmitHeight = Global.miningInfo.height.toLong
         activeUsers += (ip_address->newUser)
         Global.poolStatistics.incrementActiveUsers()
         //Global.poolStatistics.addActiveTB(newUser.reported_TB)
@@ -66,8 +71,8 @@ class UserManager extends Actor with ActorLogging {
       // number of blocks
       prevNum = activeUsers.size
       activeUsers.retain((k,v) => {
-        v.lastSubmitHeight > (Global.miningInfo.height - Config.MIN_HEIGHT_DIFF)
-        })
+        v.lastSubmitHeight > (
+          Global.miningInfo.height.toLong - Config.MIN_HEIGHT_DIFF)})
       Global.poolStatistics.decrementActiveUsersBy(prevNum - activeUsers.size)
 
       // Recalculate the total active network TB if users went inactive
@@ -82,7 +87,7 @@ class UserManager extends Actor with ActorLogging {
       // Update the last submit time of users who aren't banned
       if (!(bannedAddresses contains ip_address)){
         var userToUpdate = activeUsers(ip_address)
-        userToUpdate.lastSubmitTime = LocalDateTime.now()
+        userToUpdate.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
         activeUsers(ip_address) = userToUpdate
         Global.poolStatistics.updateSubmitTime(userToUpdate.lastSubmitTime)
       } 

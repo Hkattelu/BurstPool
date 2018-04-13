@@ -11,7 +11,8 @@ import net.liftweb.json._
 import java.time.LocalDateTime
 import java.math.BigInteger
 
-case class getNewBlock()
+case class getLastBlock()
+case class getNewMiningInfo()
 
 class MiningInfoUpdater extends Actor with ActorLogging {
 
@@ -23,28 +24,40 @@ class MiningInfoUpdater extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
-  val burstRequest = "/burst?requestType="
-  val getBlockURI = Config.NODE_ADDRESS + burstRequest + "getBlock"
+  val burstRequest = Config.NODE_ADDRESS + "/burst?requestType="
+  val getBlockURI = burstRequest + "getBlock"
+  val getMiningInfoURI = burstRequest + "getMiningInfo"
 
   def receive() = {
-    case getNewBlock() => {
+    case getLastBlock() => {
       http.singleRequest(HttpRequest(uri = getBlockURI)).pipeTo(self)
+    }
+    case getNewMiningInfo() => {
+      http.singleRequest(HttpRequest(uri = getMiningInfoURI)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         {
-          val temp = parse(body.utf8String).extract[Global.MiningInfo]
-          // Update information if there is a new block
-          if(temp.generationSignature != Global.miningInfo.generationSignature){
+          if(body.utf8String contains "generator") { 
+            Global.lastBlockInfo = 
+              parse(body.utf8String).extract[Global.LastBlockInfo]
             // Pay out shares if we mined the last block, dump them otherwise
-            temp.generator == Config.ACCOUNT_ID match {
+            Global.lastBlockInfo.generator == Config.ACCOUNT_ID match {
               case true => Global.shareManager ! queueCurrentShares(
-                temp.block.toLong)
+                Global.lastBlockInfo.block.toLong)
               case false => Global.shareManager ! dumpCurrentShares()
             }
-            Global.miningInfo = temp
-            Global.deadlineSubmitter ! resetBestDeadline()
-          }
+          } else {
+            val temp = parse(body.utf8String).extract[Global.MiningInfo]
+            
+            // Update information if there is a new block
+            if(temp.generationSignature 
+              != Global.miningInfo.generationSignature){
+              Global.miningInfo = temp
+              Global.deadlineSubmitter ! resetBestDeadline()
+              self ! getLastBlock()
+            }
+          } 
         }
       } 
     case resp @ HttpResponse(code, _, _, _) =>

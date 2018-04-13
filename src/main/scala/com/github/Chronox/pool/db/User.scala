@@ -1,6 +1,6 @@
 package com.github.Chronox.pool.db
 import org.squeryl.KeyedEntity
-import java.time.LocalDateTime
+import java.sql.Timestamp
 
 class User (
   var id: Long,
@@ -8,7 +8,7 @@ class User (
   var lastSubmitHeight: Long,
   var nickName: Option[String],
   var isActive: Boolean,
-  var lastSubmitTime: LocalDateTime,
+  var lastSubmitTime: Timestamp,
   var pendingNQT: Long,
   var payedNQT: Long,
   var reported_TB: Option[BigDecimal],

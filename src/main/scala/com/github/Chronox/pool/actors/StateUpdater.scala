@@ -20,7 +20,6 @@ class StateUpdater extends Actor with ActorLogging {
   import akka.pattern.pipe
   import context.dispatcher
 
-  implicit val formats = DefaultFormats
   final implicit val materializer: ActorMaterializer = 
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
@@ -33,7 +32,7 @@ class StateUpdater extends Actor with ActorLogging {
   def receive() = {
     case StateTick() => {
       Global.burstPriceChecker ! updateBurstPriceInfo()
-      Global.miningInfoUpdater ! getNewBlock()
+      Global.miningInfoUpdater ! getNewMiningInfo()
       Global.userManager ! refreshUsers()
     }
     case PayoutUsers() => Global.rewardPayout ! PayoutRewards()

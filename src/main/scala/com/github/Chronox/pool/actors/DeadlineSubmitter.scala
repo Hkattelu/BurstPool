@@ -11,6 +11,7 @@ import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import HttpMethods._
 import net.liftweb.json._
+import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.math.BigInteger
 
@@ -28,8 +29,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
-  val baseSubmitURI = (Config.NODE_ADDRESS + 
-    "/burst?requestType=submitNonce&secretPhrase=" + Config.SECRET_PHRASE)
+  val baseSubmitURI = Uri(Config.NODE_ADDRESS + "/burst")
 
   def isBestDeadline(deadline: BigInteger): Boolean = {
     return deadline.compareTo(Global.currentBestDeadline) <= 0
@@ -42,9 +42,11 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     case submitNonce(user: User, nonce: Long, deadline: BigInteger) => {
       // If the given nonce is our best so far, send it to the network
       if(isBestDeadline(deadline)){
+        val ent = FormData(Map("secretPhrase"->Config.SECRET_PHRASE,
+          "accountId"->user.id.toString, "nonce"->nonce.toString)).toEntity
         http.singleRequest(
-          HttpRequest(method = POST,
-           uri = baseSubmitURI+"&accountId="+user.id+"&nonce="+nonce)
+          HttpRequest(method = POST, uri = baseSubmitURI,
+            entity = ent)
         ) onComplete {
           case Success(res: HttpResponse) => {
             // Check to see if the network calculated the same deadline as us
@@ -52,14 +54,14 @@ class DeadlineSubmitter extends Actor with ActorLogging {
             deadline == (new BigInteger(result.deadline)) match {
               case true => {  
                 log.info("Deadline successfully submitted")
-                user.lastSubmitTime = LocalDateTime.now()
-                user.lastSubmitHeight = Global.miningInfo.height
+                user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
+                user.lastSubmitHeight = Global.miningInfo.height.toLong
                 if(deadline.compareTo(Global.currentBestDeadline) <= 0){
                   Global.currentBestDeadline = deadline
                   // Can convert bigint deadline to long because it's less than
                   // the target deadline
                   Global.shareManager ! addShare(user, 
-                    Global.miningInfo.block.toLong,
+                    Global.lastBlockInfo.block.toLong,
                     nonce, deadline.longValue())
                 }
               }

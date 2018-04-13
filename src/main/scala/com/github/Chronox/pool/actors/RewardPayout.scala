@@ -35,13 +35,17 @@ class RewardPayout extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
   final implicit val timeout: Timeout = 4 seconds
 
-  var unpaidRewards = TrieMap[Long, List[Reward]]()
+  var unpaidRewards: TrieMap[Long, List[Reward]] = TrieMap[Long, List[Reward]]()
   val burstToNQT = 100000000L
   val http = Http(context.system)
   val baseTxURI = (Config.NODE_ADDRESS + 
     "/burst?requestType=sendMoney&deadline=1440&feeNQT="+burstToNQT.toString+
     "&secretPhrase="+Config.SECRET_PHRASE)
   val baseBlockURI = Config.NODE_ADDRESS + "/burst?requestType=getBlock&block="
+
+  override def preStart() {
+    // unpaidRewards = Global.poolDB.loadRewardShares()
+  }
 
   def receive() = {
     case PayoutRewards() => {

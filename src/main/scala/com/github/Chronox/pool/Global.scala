@@ -1,6 +1,6 @@
 package com.github.Chronox.pool
-
 import actors._
+import db.PoolSchema
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import akka.actor.ActorRef
@@ -17,14 +17,18 @@ object Global {
   var shareManager: ActorRef = null
   var rewardPayout: ActorRef = null
   val poolStatistics = PoolStatistics
+  val poolDB = PoolSchema
 
   var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE
-  var miningInfo: MiningInfo = MiningInfo(
-    null, null, null, 0L, null, null, null, null)
+  var miningInfo: MiningInfo = MiningInfo(null, null, null)
+  var lastBlockInfo: LastBlockInfo = LastBlockInfo(null, null, null, null, 
+    null, null, null, null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 
-  case class MiningInfo(generationSignature:String, block: String,
-    baseTarget: String, height: Long, blockReward: String,
+  case class MiningInfo(generationSignature:String, baseTarget: String, 
+    height: String)
+  case class LastBlockInfo(generationSignature:String, block: String,
+    baseTarget: String, height: String, blockReward: String,
     generator: String, generatorRS: String,
     numberOfTransactions: String)
 }

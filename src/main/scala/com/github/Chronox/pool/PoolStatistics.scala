@@ -1,5 +1,5 @@
 package com.github.Chronox.pool
-import java.time.LocalDateTime
+import java.sql.Timestamp
 import java.util.concurrent.atomic.AtomicInteger
 
 object PoolStatistics {
@@ -11,7 +11,7 @@ object PoolStatistics {
 
   // Bigdecimal and localdatetime are thread-safe
   var netActiveTB: BigDecimal = 0.0
-  var lastSubmitTime: LocalDateTime = null
+  var lastSubmitTime: Timestamp = null
 
   def resetCurrentStatistics() {
     numValidNonces.set(0)
@@ -26,7 +26,7 @@ object PoolStatistics {
   def decrementActiveUsersBy(num: Int) {numActiveUsers.addAndGet(-num)}
   def incrementBannedAddresses() {numBannedAddresses.incrementAndGet()}
   def decrementBannedAddressesBy(num: Int) {numBannedAddresses.addAndGet(-num)}
-  def updateSubmitTime(time: LocalDateTime) {lastSubmitTime = time}
+  def updateSubmitTime(time: Timestamp) {lastSubmitTime = time}
   def resetActiveTB() {netActiveTB = 0}
   def addActiveTB(tb: BigDecimal) {netActiveTB += tb}
   def incrementValidNonces() {numValidNonces.incrementAndGet()}

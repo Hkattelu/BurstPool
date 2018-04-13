@@ -39,15 +39,17 @@ with JacksonJsonSupport with FutureSupport {
         case "submitNonce" => {
           try {
             val ip = request.getRemoteAddr()
-            val accId = Long.parseUnsignedLong(params("accountId"))
-            val nonce = Long.parseUnsignedLong(params("nonce"))
-            
+            val accId = new BigInteger(params("accountId")).longValue()
+            val nonce = new BigInteger(params("nonce")).longValue()
             var deadline: BigInteger = 
               Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
             val deadlineFuture = (
               Global.deadlineChecker ? nonceToDeadline(accId, nonce))
               .mapTo[BigInteger]
             deadline = Await.result(deadlineFuture, timeout.duration)
+            response.getWriter.println(
+              "acc: " + accId + ", nonce: " + nonce)
+            response.getWriter.println("deadline:" + deadline)
             if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
               // Add user if we haven't seen this IP before
               val userFuture = (Global.userManager ? addUser(ip, accId))
@@ -71,8 +73,9 @@ with JacksonJsonSupport with FutureSupport {
                 LocalDateTime.now().plusMinutes(Config.BAN_TIME))
               Global.poolStatistics.incrementBadNonces()
               response.setStatus(500)
-              response.getWriter().println(
+              response.getWriter.println(
                 "You submitted a bad deadline, and are now temporarily banned")
+              response.getWriter.println("Deadline: " + deadline.toString())
             }
           } catch {
             case e: NoSuchElementException => {

@@ -65,7 +65,7 @@ object PoolSchema extends Schema {
       for(i <- 1 to Config.MIN_HEIGHT_DIFF) {
         transaction {   
           val block = blocks.where(
-            b => b.height === (Global.miningInfo.height - i)).single
+            b => b.height === (Global.miningInfo.height.toLong - i)).single
           var userShares = TrieMap[Long, Share]()
           if (block != None) {
             for(share <- shares.where(s => s.blockId === block.id).toList)
@@ -79,16 +79,18 @@ object PoolSchema extends Schema {
 
   def loadCurrentShares(): TrieMap[Long, Share] = {
     var userShares = TrieMap[Long, Share]()
-    val block = blocks.where(
-      b => b.height === (Global.miningInfo.height - 1)).single
-    if (block != None) {
-      for(share <- shares.where(s => s.blockId === block.id).toList)
-        userShares += (share.userId->share)   
+    transaction {
+      val block = blocks.where(
+        b => b.height === (Global.miningInfo.height.toLong - 1)).single
+      if (block != None) {
+        for(share <- shares.where(s => s.blockId === block.id).toList)
+          userShares += (share.userId->share)   
+      }
     }
     return userShares
   }
 
-  def loadRewardShares() {
+  def loadRewardShares(): TrieMap[Long, List[Reward]] = {
     var rewardsToPay = TrieMap[Long, List[Reward]]()
     transaction {
       var rewardList = rewards.where(r => r.isPaid === false).toList

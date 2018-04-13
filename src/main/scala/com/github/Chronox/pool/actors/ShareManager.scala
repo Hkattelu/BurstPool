@@ -21,8 +21,13 @@ case class getCurrentPercents()
 case class getAverageHistoricalPercents()
 
 class ShareManager extends Actor with ActorLogging {
-  var currentShares = TrieMap[Long, Share]()
+  var currentShares: TrieMap[Long, Share] = TrieMap[Long, Share]()
   val one = BigDecimal.valueOf(1)
+
+  override def preStart() {
+    // historicShareQueue.init(Global.poolDB.loadHistoricShares())
+    // currentShares = Global.poolDB.loadCurrentShares()
+  }
 
   def receive() = {
     case addShare(user: User, blockId: Long, 
@@ -65,6 +70,10 @@ class ShareManager extends Actor with ActorLogging {
   object historicShareQueue {
     var queue: ConcurrentLinkedQueue[TrieMap[Long, Share]] = 
       new ConcurrentLinkedQueue[TrieMap[Long, Share]]()
+
+    def init(q: ConcurrentLinkedQueue[TrieMap[Long, Share]]) {
+      queue = q
+    }
 
     def enqueue(map: TrieMap[Long, Share]) {
       queue.add(map)
