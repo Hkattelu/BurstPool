@@ -33,10 +33,9 @@ with JacksonJsonSupport with FutureSupport {
   }
 
   get("/"){
+    def respond(msg: String) = response.getWriter.println(msg)
     try {
-      def respond(msg: String) = response.getWriter.println(msg)
-      val requestType = params("requestType")
-      requestType match {
+      params("requestType") match {
         case "submitNonce" => {
           try {
             val ip = request.getRemoteAddr()
@@ -50,11 +49,12 @@ with JacksonJsonSupport with FutureSupport {
             if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
               // Add user if we haven't seen this IP before
               val userFuture = (Global.userManager ? addUser(ip, accId))
-              userFuture.mapTo[Option[User]] onSuccess {
-                case Some(user) => {
-                  // Submit nonce to network to verify 
+                .mapTo[Option[User]]
+              Await.result(userFuture, timeout.duration) match {
+                case Some(user: User) => {
+                  // Submit nonce to network to verify
                   val submitFuture = (Global.deadlineSubmitter ? submitNonce(
-                    user,nonce, deadline)).mapTo[Result]
+                    user, nonce, deadline)).mapTo[Result]
                   Await.result(submitFuture, timeout.duration) match {
                     case Result(Global.SUCCESS_MESSAGE) => {
                       Global.userManager ! updateSubmitTime(ip)
@@ -90,7 +90,10 @@ with JacksonJsonSupport with FutureSupport {
         case "getMiningInfo" => Global.miningInfo
       }
     } catch {
-      case e: NoSuchElementException => "Invalid request type"
+      case e: NoSuchElementException => {
+        response.setStatus(400)
+        respond("Invalid request type")
+      }
     }
   }
 }
