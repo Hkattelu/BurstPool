@@ -29,10 +29,10 @@ class MiningInfoUpdater extends Actor with ActorLogging {
   val getMiningInfoURI = burstRequest + "getMiningInfo"
 
   def receive() = {
-    case getLastBlock() => {
+    case _: getLastBlock => {
       http.singleRequest(HttpRequest(uri = getBlockURI)).pipeTo(self)
     }
-    case getNewMiningInfo() => {
+    case _: getNewMiningInfo => {
       http.singleRequest(HttpRequest(uri = getMiningInfoURI)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>

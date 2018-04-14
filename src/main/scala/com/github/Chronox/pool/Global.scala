@@ -32,6 +32,7 @@ object Global {
     generator: String, generatorRS: String,
     numberOfTransactions: String)
   case class ErrorMessage(errorCode: String, errorDescription: String)
+  case class setSubmitURI(uri: String)
 
   val SUCCESS_MESSAGE = "success"
 }

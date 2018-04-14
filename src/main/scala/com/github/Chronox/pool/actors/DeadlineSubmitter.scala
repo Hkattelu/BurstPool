@@ -30,7 +30,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
 
   val http = Http(context.system)
-  val baseSubmitURI = Uri(Config.NODE_ADDRESS + "/burst")
+  var baseSubmitURI = Uri(Config.NODE_ADDRESS + "/burst")
 
   def isBestDeadline(deadline: BigInteger): Boolean = 
     return deadline.compareTo(Global.currentBestDeadline) <= 0
@@ -39,6 +39,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
     case resetBestDeadline() => {
       Global.currentBestDeadline = Config.TARGET_DEADLINE
     }
+    case Global.setSubmitURI(uri: String) => baseSubmitURI = Uri(uri)
     case submitNonce(user: User, nonce: Long, deadline: BigInteger) => {
       val s = sender
       val ent = FormData(Map("secretPhrase"->Config.SECRET_PHRASE,

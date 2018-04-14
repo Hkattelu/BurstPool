@@ -21,32 +21,10 @@ import java.time.LocalDateTime
 import java.math.BigInteger
 import scala.math.BigDecimal.RoundingMode
 
-class PoolServletTests extends ScalatraSuite 
-  with FunSuiteLike with DatabaseInit {
+class PoolServletTests extends ScalatraSuite with FunSuiteLike 
+with DatabaseInit {
 
   val system = ActorSystem()
-  Global.stateUpdater = 
-    system.actorOf(Props[StateUpdater], name="StateUpdater")
-  Global.burstPriceChecker = 
-    system.actorOf(Props[BurstPriceChecker], name = "BurstPriceChecker")
-  Global.miningInfoUpdater = 
-    system.actorOf(Props[MiningInfoUpdater], name = "MiningInfoUpdater")
-  Global.deadlineSubmitter = 
-    system.actorOf(Props[DeadlineSubmitter], name = "DeadlineSubmitter")
-  Global.deadlineChecker = 
-    system.actorOf(Props[DeadlineChecker], name = "DeadlineChecker")
-  Global.userManager = 
-    system.actorOf(Props[UserManager], name = "UserManager")
-  Global.shareManager = 
-    system.actorOf(Props[ShareManager], name = "ShareManager")
-  Global.rewardPayout = 
-    system.actorOf(Props[RewardPayout], name = "RewardPayout")
-  
-  addServlet(classOf[PoolServlet], "/*")
-  addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
-  addServlet(new MockBurstServlet(system), "/test")
-  addServlet(new BurstServlet(system), "/burst")
-
   implicit val formats = DefaultFormats
   protected implicit def executor: ExecutionContext = system.dispatcher
   protected implicit val timeout: Timeout = 5 seconds
@@ -54,12 +32,33 @@ class PoolServletTests extends ScalatraSuite
   val zero = BigDecimal.valueOf(0)
   val quarter = BigDecimal.valueOf(0.25)
   val one = BigDecimal.valueOf(1)
+  val testNodeURL = "https://127.0.0.1:8125/burst"
 
   override def beforeAll(){
     Config.init()
     //configureDb()
-    // Hardcoded for testing
-    system.stop(Global.miningInfoUpdater)
+    Global.burstPriceChecker = 
+      system.actorOf(Props[BurstPriceChecker], name = "BurstPriceChecker")
+    Global.miningInfoUpdater = 
+      system.actorOf(Props[MiningInfoUpdater], name = "MiningInfoUpdater")
+    Global.deadlineSubmitter = 
+      system.actorOf(Props[DeadlineSubmitter], name = "DeadlineSubmitter")
+    Global.deadlineChecker = 
+      system.actorOf(Props[DeadlineChecker], name = "DeadlineChecker")
+    Global.userManager = 
+      system.actorOf(Props[UserManager], name = "UserManager")
+    Global.shareManager = 
+      system.actorOf(Props[ShareManager], name = "ShareManager")
+    Global.rewardPayout = 
+      system.actorOf(Props[RewardPayout], name = "RewardPayout")
+    Global.stateUpdater = 
+      system.actorOf(Props[StateUpdater], name="StateUpdater")
+    
+    addServlet(classOf[PoolServlet], "/*")
+    addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
+    addServlet(new MockBurstServlet(system), "/test")
+    addServlet(new BurstServlet(system), "/burst")
+    //system.stop(Global.miningInfoUpdater)
     super.beforeAll()
   }
 
@@ -175,12 +174,7 @@ class PoolServletTests extends ScalatraSuite
   test("Reward Transactions are successfully sent"){
   }
 
-  test("Submitting a valid nonce adds Shares and sets best deadline"){
-
-  }
-
   test("Rewards are queue'd when mining information changes"){
-
   }
 
   test("Best deadline is overwritten on better deadline"){
@@ -249,6 +243,20 @@ class PoolServletTests extends ScalatraSuite
   test("Submitting a valid nonce for an old block"){
     Global.userManager ! resetUsers()
 
+    // Constants from block at height 478972
+    val accId = "7451808546734026404"
+    val nonce = "151379672"
+    Global.miningInfo = new Global.MiningInfo(
+      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
+      "54752", "478972")
+    get("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
+      "nonce"->nonce)) {
+      body should include ("did not match calculated deadline")
+      status should equal (500)
+    }
+  }
+
+  test("Submitting a valid nonce adds Shares and sets best deadline"){
     // Constants from block at height 478972
     val accId = "7451808546734026404"
     val nonce = "151379672"

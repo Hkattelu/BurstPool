@@ -21,10 +21,10 @@ import java.math.BigInteger
 case class addRewards(blockId: Long, 
   currentSharePercents: Map[Long, BigDecimal],
   historicSharePercents: Map[Long, BigDecimal])
-case class getRewards()
 case class BlockResponse(blockReward: String, 
   totalFeeNQT: String, block: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
+case class getRewards()
 case class PayoutRewards()
 case class clearRewards()
 
@@ -40,25 +40,23 @@ class RewardPayout extends Actor with ActorLogging {
   var unpaidRewards: TrieMap[Long, List[Reward]] = TrieMap[Long, List[Reward]]()
   val burstToNQT = 100000000L
   val http = Http(context.system)
-  val baseTxURI = (Config.NODE_ADDRESS + 
-    "/burst?requestType=sendMoney&deadline=1440&feeNQT="+burstToNQT.toString+
-    "&secretPhrase="+Config.SECRET_PHRASE)
-  val baseBlockURI = Config.NODE_ADDRESS + "/burst?requestType=getBlock&block="
+  var baseURI = Uri(Config.NODE_ADDRESS + "/burst")
 
   override def preStart() {
     // unpaidRewards = Global.poolDB.loadRewardShares()
   }
 
   def receive() = {
-    case PayoutRewards() => {
+    case _: PayoutRewards => {
       var blockToNQT = scala.collection.mutable.Map[Long, Long]()
       var userToRewards = scala.collection.mutable.Map[Long, List[Reward]]()
       var responseFutureList = new ListBuffer[Future[HttpResponse]]()
-
+ 
       // Send out requests for block reward information
       for((blockId, rewards) <- unpaidRewards) 
         responseFutureList += http.singleRequest(HttpRequest(
-          uri = baseBlockURI + blockId.toString())).mapTo[HttpResponse]
+          uri = baseURI, entity = FormData(Map("requestType"->"getBlock",
+            "block"->blockId.toString)).toEntity)).mapTo[HttpResponse]
 
       // Block until we get the responses, then handle them
       for(future <- responseFutureList.toList) {   
@@ -107,8 +105,11 @@ class RewardPayout extends Actor with ActorLogging {
 
         // Ask to create a transaction if the reward was more than the tx fee
         if (amount > 0) {
-          http.singleRequest(HttpRequest(method = POST, 
-              uri = baseTxURI+"&recipient="+id+"&amountNQT="+amount)
+          val ent = FormData(Map("requestType"->"sendMoney", "deadline"->"1440",
+            "feeNQT"->burstToNQT.toString, "secretPhrase"->Config.SECRET_PHRASE,
+            "recipient"->id.toString, "amountNQT"->amount.toString)).toEntity
+          http.singleRequest(HttpRequest(method = POST, uri = baseURI, 
+            entity = ent)
           ) onComplete {
             case Success(res: HttpResponse) => {
               val txRes = parse(
@@ -120,9 +121,9 @@ class RewardPayout extends Actor with ActorLogging {
             case Failure(error) => log.error(
               "Transaction failed: " + error.toString())
           }
-        } else {
+        } 
+        else 
           log.info("User " + id + " could not pay the TX fee")
-        }
       }
     }
     case addRewards(blockId: Long, 
@@ -141,7 +142,8 @@ class RewardPayout extends Actor with ActorLogging {
         } 
       unpaidRewards += (blockId->rewards.values.toList)
     }
-    case getRewards() => sender ! unpaidRewards.toMap
-    case clearRewards() => unpaidRewards = TrieMap[Long, List[Reward]]()
+    case _: getRewards => sender ! unpaidRewards.toMap
+    case _: clearRewards => unpaidRewards = TrieMap[Long, List[Reward]]()
+    case Global.setSubmitURI(uri: String) => baseURI = Uri(uri)   
   }
 }
