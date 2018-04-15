@@ -32,11 +32,12 @@ with DatabaseInit {
   val zero = BigDecimal.valueOf(0)
   val quarter = BigDecimal.valueOf(0.25)
   val one = BigDecimal.valueOf(1)
-  val testNodeURL = "https://127.0.0.1:8125/burst"
+  var testNodeURL = ""
 
   override def beforeAll(){
+    super.beforeAll()
     Config.init()
-    //configureDb()
+    configureDb()
     Global.burstPriceChecker = 
       system.actorOf(Props[BurstPriceChecker], name = "BurstPriceChecker")
     Global.miningInfoUpdater = 
@@ -53,13 +54,23 @@ with DatabaseInit {
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
     Global.stateUpdater = 
       system.actorOf(Props[StateUpdater], name="StateUpdater")
-    
+
+    server.getConnectors.headOption match {
+      case Some(conn) =>
+        val networkConn = 
+          conn.asInstanceOf[org.eclipse.jetty.server.NetworkConnector]
+        val host = Option(networkConn.getHost) getOrElse "localhost"
+        val port = networkConn.getLocalPort
+        testNodeURL = "http://" + host + ":" + port + "/test"
+        require(port > 0, "The detected local port is < 1, that's not allowed")
+        "http://%s:%d".format(host, port)
+      case None =>
+        sys.error("can't calculate base URL: no connector")
+    }
     addServlet(classOf[PoolServlet], "/*")
     addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
     addServlet(new MockBurstServlet(system), "/test")
     addServlet(new BurstServlet(system), "/burst")
-    //system.stop(Global.miningInfoUpdater)
-    super.beforeAll()
   }
 
   test("All servlets up and running"){
@@ -103,7 +114,7 @@ with DatabaseInit {
     val future = (Global.deadlineChecker ? nonceToDeadline(accId, nonce))
       .mapTo[BigInteger]
     val deadline = Await.result(future, timeout.duration)
-    deadline.toString() should equal ("273")
+    deadline should equal (BigInteger.valueOf(273L))
   }
 
   test("Simple Shares to Reward calculation"){
@@ -257,6 +268,8 @@ with DatabaseInit {
   }
 
   test("Submitting a valid nonce adds Shares and sets best deadline"){
+    Global.deadlineSubmitter ! Global.setSubmitURI(testNodeURL)
+
     // Constants from block at height 478972
     val accId = "7451808546734026404"
     val nonce = "151379672"
@@ -265,8 +278,8 @@ with DatabaseInit {
       "54752", "478972")
     get("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
       "nonce"->nonce)) {
-      body should include ("did not match calculated deadline")
-      status should equal (500)
+      status should equal (200)
+      Global.currentBestDeadline should equal (BigInteger.valueOf(273L))
     }
   }
 

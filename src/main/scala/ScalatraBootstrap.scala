@@ -12,14 +12,6 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
 
   implicit val formats = DefaultFormats
   val system = ActorSystem()
-  Global.stateUpdater = system.actorOf(Props[StateUpdater])
-  Global.burstPriceChecker = system.actorOf(Props[BurstPriceChecker])
-  Global.miningInfoUpdater = system.actorOf(Props[MiningInfoUpdater])
-  Global.deadlineSubmitter = system.actorOf(Props[DeadlineSubmitter])
-  Global.deadlineChecker = system.actorOf(Props[DeadlineChecker])
-  Global.userManager = system.actorOf(Props[UserManager])
-  Global.shareManager = system.actorOf(Props[ShareManager])
-  Global.rewardPayout = system.actorOf(Props[RewardPayout])
 
   override def init(context: ServletContext) {
     if(!Config.init()) return
@@ -28,6 +20,23 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
       .param("requestType", "getBlock").asString.body
     Global.miningInfo = parse(response).extract[Global.MiningInfo]
     configureDb()
+
+    Global.burstPriceChecker = 
+      system.actorOf(Props[BurstPriceChecker], name = "BurstPriceChecker")
+    Global.miningInfoUpdater = 
+      system.actorOf(Props[MiningInfoUpdater], name = "MiningInfoUpdater")
+    Global.deadlineSubmitter = 
+      system.actorOf(Props[DeadlineSubmitter], name = "DeadlineSubmitter")
+    Global.deadlineChecker = 
+      system.actorOf(Props[DeadlineChecker], name = "DeadlineChecker")
+    Global.userManager = 
+      system.actorOf(Props[UserManager], name = "UserManager")
+    Global.shareManager = 
+      system.actorOf(Props[ShareManager], name = "ShareManager")
+    Global.rewardPayout = 
+      system.actorOf(Props[RewardPayout], name = "RewardPayout")
+    Global.stateUpdater = 
+      system.actorOf(Props[StateUpdater], name="StateUpdater")
     context.mount(new PoolServlet(), "/*")
     context.mount(new BurstPriceServlet(), "/getBurstPrice")
     context.mount(new BurstServlet(system), "/burst")

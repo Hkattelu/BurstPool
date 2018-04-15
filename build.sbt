@@ -1,18 +1,12 @@
 val ScalatraVersion = "2.6.2"
-
 organization := "com.github.Chronox"
-
 name := "ChronoxPool"
-
 version := "0.1.0-SNAPSHOT"
-
 scalaVersion := "2.12.4"
-
 val port = 8124
 containerPort in Jetty := port
-
+fork in Test := true
 resolvers += Classpaths.typesafeReleases
-
 libraryDependencies ++= Seq(
   "org.scalatra" %% "scalatra" % ScalatraVersion,
   "org.scalatra" %% "scalatra-scalatest" % ScalatraVersion % "test",
@@ -29,6 +23,5 @@ libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "5.1.10",
   "c3p0" % "c3p0" % "0.9.1.2"
 )
-
 enablePlugins(SbtTwirl)
 enablePlugins(ScalatraPlugin)

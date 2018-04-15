@@ -25,7 +25,7 @@ class StateUpdater extends Actor with ActorLogging {
   override def preStart() {
     context.system.scheduler.schedule(0 seconds, 1 minute, self, StateTick())
     context.system.scheduler.schedule(
-      0 seconds, 2 seconds, Global.miningInfoUpdater, getNewMiningInfo())
+      0 seconds, 5 seconds, Global.miningInfoUpdater, getNewMiningInfo())
     context.system.scheduler.schedule(
       Config.PAY_TIME hours, Config.PAY_TIME hours, 
       Global.rewardPayout, PayoutRewards())

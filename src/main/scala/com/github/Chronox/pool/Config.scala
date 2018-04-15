@@ -52,8 +52,8 @@ object Config {
         SECRET_PHRASE = elements.getOrElse("SECRET_PHRASE", "")
         MIN_HEIGHT_DIFF = elements.getOrElse("MIN_HEIGHT_DIFF", "200").toInt
         POOL_STRATEGY = elements.getOrElse("POOL_STRATEGY", "STANDARD")
-        TARGET_DEADLINE = new BigInteger(
-          elements.getOrElse("TARGET_DEADLINE", "2592000"))
+        TARGET_DEADLINE = BigInteger.valueOf(
+          elements.getOrElse("TARGET_DEADLINE", "2592000").toLong)
         return true
       }
     }

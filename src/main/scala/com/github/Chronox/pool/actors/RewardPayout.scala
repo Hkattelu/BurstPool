@@ -43,7 +43,7 @@ class RewardPayout extends Actor with ActorLogging {
   var baseURI = Uri(Config.NODE_ADDRESS + "/burst")
 
   override def preStart() {
-    // unpaidRewards = Global.poolDB.loadRewardShares()
+    //unpaidRewards = Global.poolDB.loadRewardShares()
   }
 
   def receive() = {

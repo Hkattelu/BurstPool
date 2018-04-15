@@ -29,7 +29,7 @@ with JacksonJsonSupport with FutureSupport {
     contentType = formats("json")
   }
 
-  get("/"){
+  def handle = {
     def respond(msg: String) = response.getWriter.println(msg)
     try {
       params("requestType") match {
@@ -40,8 +40,8 @@ with JacksonJsonSupport with FutureSupport {
           val nonce = new BigInteger(params("nonce")).longValue()
           val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
             accId, nonce)).mapTo[BigInteger]
-          SubmitResult(Global.SUCCESS_MESSAGE,
-            Await.result(deadlineFuture, timeout.duration).toString())
+          val deadline = Await.result(deadlineFuture, timeout.duration).toString
+          SubmitResult(Global.SUCCESS_MESSAGE, deadline)
         }
         // Validate and broadcast tx if recipient = 1
         // Validate but not broadcast tx if recipient = 0
@@ -71,4 +71,7 @@ with JacksonJsonSupport with FutureSupport {
       }
     }
   }
+
+  get("/"){handle}
+  post("/") {handle}
 }

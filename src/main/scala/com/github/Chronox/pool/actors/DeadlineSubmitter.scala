@@ -54,7 +54,7 @@ class DeadlineSubmitter extends Actor with ActorLogging {
             json.extract[Result].result match {
               case Global.SUCCESS_MESSAGE => {  
                 // Check to see if the network calculated the same deadline
-                if (json.extract[SubmitResult].deadline == deadline) {
+                if (json.extract[SubmitResult].deadline == deadline.toString) {
                   log.info("Deadline successfully submitted")
                   user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
                   user.lastSubmitHeight = Global.miningInfo.height.toLong

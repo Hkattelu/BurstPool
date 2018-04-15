@@ -25,8 +25,8 @@ class ShareManager extends Actor with ActorLogging {
   val one = BigDecimal.valueOf(1)
 
   override def preStart() {
-    // historicShareQueue.init(Global.poolDB.loadHistoricShares())
-    // currentShares = Global.poolDB.loadCurrentShares()
+    //historicShareQueue.init(Global.poolDB.loadHistoricShares())
+    //currentShares = Global.poolDB.loadCurrentShares()
   }
 
   def receive() = {
