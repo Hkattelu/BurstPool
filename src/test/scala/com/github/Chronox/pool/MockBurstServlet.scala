@@ -29,8 +29,25 @@ with JacksonJsonSupport with FutureSupport {
     contentType = formats("json")
   }
 
-  def handle = {
-    def respond(msg: String) = response.getWriter.println(msg)
+  get("/"){
+    try {
+      params("requestType") match {
+        case "submitNonce" => "Submitting nonces only takes POST requests"
+        case "sendMoney" => "Sending money only takes POST requests"
+        // Return dummy info
+        case "getMiningInfo" => Global.MiningInfo("84", "1", "1")
+        case "getBlock" => new BlockResponse("99", "1", 
+          params.getOrElse("block", "1"))
+      }
+    } catch {
+      case e: NoSuchElementException => {
+        response.setStatus(400)
+        "Missing requestType parameter"
+      }
+    }
+  }
+
+  post("/") {
     try {
       params("requestType") match {
         // Return a success response, no matter the nonce
@@ -60,18 +77,14 @@ with JacksonJsonSupport with FutureSupport {
             Global.ErrorMessage("3", "some error")
         }
         // Return dummy info
-        case "getMiningInfo" => Global.MiningInfo("84", "1", "1")
-        case "getBlock" => new BlockResponse("99", "1", 
-          params.getOrElse("block", "1"))
+        case "getMiningInfo" => "Getting mining info only takes GET requests"
+        case "getBlock" => "Getting blocks only takes GET requests"
       }
     } catch {
       case e: NoSuchElementException => {
         response.setStatus(400)
-        respond("Missing request parameter")
+        "Missing requestType parameter"
       }
     }
   }
-
-  get("/"){handle}
-  post("/") {handle}
 }

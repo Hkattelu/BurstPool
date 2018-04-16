@@ -62,18 +62,18 @@ class DeadlineSubmitter extends Actor with ActorLogging {
                   if(isBestDeadline(deadline))
                     Global.currentBestDeadline = deadline
                   Global.shareManager ! addShare(user, 
-                    Global.lastBlockInfo.block.toLong, nonce, 
+                    new BigInteger(Global.lastBlockInfo.block).longValue, nonce, 
                     deadline.longValue())
                   s ! Result(Global.SUCCESS_MESSAGE)
                 } else {
                   val e = "Response Deadline did not match calculated deadline"
-                  log.info(e)
+                  log.error(e)
                   s ! Result(e) 
                 }
               }
               case _ => {
                 val e = "Network did not accept deadline"
-                log.info(e)
+                log.error(e)
                 s ! Result(e)
               }
             }

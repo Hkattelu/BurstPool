@@ -53,7 +53,7 @@ with DatabaseInit {
     Global.rewardPayout = 
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
     Global.stateUpdater = 
-      system.actorOf(Props[StateUpdater], name="StateUpdater")
+      system.actorOf(Props(new StateUpdater(true)), name="StateUpdater")
 
     server.getConnectors.headOption match {
       case Some(conn) =>
@@ -102,19 +102,6 @@ with DatabaseInit {
       body should include ("baseTarget")
       body should include ("height")
     }
-  }
-
-  test("Shabal works properly"){
-    // Constants from block at height 478972
-    val accId: Long = new BigInteger("7451808546734026404").longValue()
-    val nonce: Long = new BigInteger("151379672").longValue()
-    Global.miningInfo = new Global.MiningInfo(
-      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
-      "54752", "478972")
-    val future = (Global.deadlineChecker ? nonceToDeadline(accId, nonce))
-      .mapTo[BigInteger]
-    val deadline = Await.result(future, timeout.duration)
-    deadline should equal (BigInteger.valueOf(273L))
   }
 
   test("Simple Shares to Reward calculation"){
@@ -242,10 +229,24 @@ with DatabaseInit {
     Await.result(future, timeout.duration) should equal (true)
   }
 
+  test("Shabal works properly"){
+    // Constants from block at height 478972
+    val accId: Long = new BigInteger("7451808546734026404").longValue()
+    val nonce: Long = new BigInteger("151379672").longValue()
+    Global.miningInfo = new Global.MiningInfo(
+      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
+      "54752", "478972")
+    val future = (Global.deadlineChecker ? nonceToDeadline(accId, nonce))
+      .mapTo[BigInteger]
+    val deadline = Await.result(future, timeout.duration)
+    println(Global.miningInfo.toString())
+    deadline should equal (BigInteger.valueOf(273L))
+  }
+
   test("Submitting a bad nonce"){
     val accId = "1" 
     val nonce = "1" // Random nonce, will probably be bad
-    get("/burst", Map("requestType" -> "submitNonce",
+    post("/burst", Map("requestType" -> "submitNonce",
       "accountId" -> accId, "nonce" -> nonce)){
       status should equal (500)
     }
@@ -260,7 +261,7 @@ with DatabaseInit {
     Global.miningInfo = new Global.MiningInfo(
       "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
       "54752", "478972")
-    get("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
+    post("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
       "nonce"->nonce)) {
       body should include ("did not match calculated deadline")
       status should equal (500)
@@ -268,7 +269,9 @@ with DatabaseInit {
   }
 
   test("Submitting a valid nonce adds Shares and sets best deadline"){
+    // Use mock server to accept the nonce
     Global.deadlineSubmitter ! Global.setSubmitURI(testNodeURL)
+    Global.shareManager ! dumpCurrentShares()
 
     // Constants from block at height 478972
     val accId = "7451808546734026404"
@@ -276,10 +279,14 @@ with DatabaseInit {
     Global.miningInfo = new Global.MiningInfo(
       "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
       "54752", "478972")
-    get("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
+    post("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
       "nonce"->nonce)) {
       status should equal (200)
       Global.currentBestDeadline should equal (BigInteger.valueOf(273L))
+      val future = (Global.shareManager ? getCurrentPercents())
+        .mapTo[Map[Long, BigDecimal]]
+      val shares = Await.result(future, timeout.duration)
+      shares.keys should contain (new BigInteger(accId).longValue)
     }
   }
 

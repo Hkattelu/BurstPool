@@ -14,7 +14,7 @@ import language.postfixOps
 
 case class StateTick()
 
-class StateUpdater extends Actor with ActorLogging {
+class StateUpdater(isTest: Boolean) extends Actor with ActorLogging {
 
   import akka.pattern.pipe
   import context.dispatcher
@@ -24,8 +24,12 @@ class StateUpdater extends Actor with ActorLogging {
 
   override def preStart() {
     context.system.scheduler.schedule(0 seconds, 1 minute, self, StateTick())
-    context.system.scheduler.schedule(
-      0 seconds, 5 seconds, Global.miningInfoUpdater, getNewMiningInfo())
+    if(isTest)
+      context.system.scheduler.scheduleOnce(
+        0 seconds, Global.miningInfoUpdater, getNewMiningInfo())
+    else
+      context.system.scheduler.schedule(
+        0 seconds, 10 seconds, Global.miningInfoUpdater, getNewMiningInfo())
     context.system.scheduler.schedule(
       Config.PAY_TIME hours, Config.PAY_TIME hours, 
       Global.rewardPayout, PayoutRewards())

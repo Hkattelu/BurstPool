@@ -36,6 +36,21 @@ with JacksonJsonSupport with FutureSupport {
     def respond(msg: String) = response.getWriter.println(msg)
     try {
       params("requestType") match {
+        case "submitNonce" => {"Submitting nonces only takes POST requests"}
+        case "getMiningInfo" => Global.miningInfo
+      }
+    } catch {
+      case e: NoSuchElementException => {
+        response.setStatus(400)
+        "Invalid request type"
+      }
+    }
+  }
+
+  post("/"){
+    def respond(msg: String) = response.getWriter.println(msg)
+    try {
+      params("requestType") match {
         case "submitNonce" => {
           try {
             val ip = request.getRemoteAddr()
@@ -58,13 +73,11 @@ with JacksonJsonSupport with FutureSupport {
                   Await.result(submitFuture, timeout.duration) match {
                     case Result(Global.SUCCESS_MESSAGE) => {
                       Global.userManager ! updateSubmitTime(ip)
-                      respond("Deadline submission success")
-                      respond("Deadline: " + deadline.toString())
+                      "Deadline submission success:" + deadline.toString
                     }
                     case Result(message) => {
                       response.setStatus(500)
-                      respond("Deadline submission failure")
-                      respond("Error: " + message)
+                      "Deadline submission failure: " + message
                     }
                   }
                 }
@@ -77,22 +90,21 @@ with JacksonJsonSupport with FutureSupport {
                 LocalDateTime.now().plusMinutes(Config.BAN_TIME))
               Global.poolStatistics.incrementBadNonces()
               response.setStatus(500)
-              respond("You submitted a bad deadline, and are now temp banned")
-              respond("Deadline: " + deadline.toString())
+              "You submitted a bad deadline, and are now temp banned"
             }
           } catch {
             case e: NoSuchElementException => {
               response.setStatus(400)
-              respond("No account ID or nonce provided")
+              "No account ID or nonce provided"
             }
           }
         }
-        case "getMiningInfo" => Global.miningInfo
+        case "getMiningInfo" => "Getting mining info only takes GET requests"
       }
     } catch {
       case e: NoSuchElementException => {
         response.setStatus(400)
-        respond("Invalid request type")
+        "Invalid request type"
       }
     }
   }

@@ -44,7 +44,7 @@ class MiningInfoUpdater extends Actor with ActorLogging {
             // Pay out shares if we mined the last block, dump them otherwise
             Global.lastBlockInfo.generator == Config.ACCOUNT_ID match {
               case true => Global.shareManager ! queueCurrentShares(
-                Global.lastBlockInfo.block.toLong)
+                new BigInteger(Global.lastBlockInfo.block).longValue)
               case false => Global.shareManager ! dumpCurrentShares()
             }
           } else {

@@ -5,7 +5,6 @@ version := "0.1.0-SNAPSHOT"
 scalaVersion := "2.12.4"
 val port = 8124
 containerPort in Jetty := port
-fork in Test := true
 resolvers += Classpaths.typesafeReleases
 libraryDependencies ++= Seq(
   "org.scalatra" %% "scalatra" % ScalatraVersion,

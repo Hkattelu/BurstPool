@@ -36,7 +36,7 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
     Global.rewardPayout = 
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
     Global.stateUpdater = 
-      system.actorOf(Props[StateUpdater], name="StateUpdater")
+      system.actorOf(Props(new StateUpdater(false)), name="StateUpdater")
     context.mount(new PoolServlet(), "/*")
     context.mount(new BurstPriceServlet(), "/getBurstPrice")
     context.mount(new BurstServlet(system), "/burst")
