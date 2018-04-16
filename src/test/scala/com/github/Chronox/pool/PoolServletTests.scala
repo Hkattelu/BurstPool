@@ -239,7 +239,6 @@ with DatabaseInit {
     val future = (Global.deadlineChecker ? nonceToDeadline(accId, nonce))
       .mapTo[BigInteger]
     val deadline = Await.result(future, timeout.duration)
-    println(Global.miningInfo.toString())
     deadline should equal (BigInteger.valueOf(273L))
   }
 

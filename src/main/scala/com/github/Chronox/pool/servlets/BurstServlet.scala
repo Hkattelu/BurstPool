@@ -33,7 +33,6 @@ with JacksonJsonSupport with FutureSupport {
   }
 
   get("/"){
-    def respond(msg: String) = response.getWriter.println(msg)
     try {
       params("requestType") match {
         case "submitNonce" => {"Submitting nonces only takes POST requests"}
@@ -48,7 +47,6 @@ with JacksonJsonSupport with FutureSupport {
   }
 
   post("/"){
-    def respond(msg: String) = response.getWriter.println(msg)
     try {
       params("requestType") match {
         case "submitNonce" => {
@@ -56,17 +54,18 @@ with JacksonJsonSupport with FutureSupport {
             val ip = request.getRemoteAddr()
             val accId = new BigInteger(params("accountId")).longValue()
             val nonce = new BigInteger(params("nonce")).longValue()
-            var deadline: BigInteger = 
-              Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
-            val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
-              accId, nonce)).mapTo[BigInteger]
-            deadline = Await.result(deadlineFuture, timeout.duration)
-            if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
-              // Add user if we haven't seen this IP before
-              val userFuture = (Global.userManager ? addUser(ip, accId))
-                .mapTo[Option[User]]
-              Await.result(userFuture, timeout.duration) match {
-                case Some(user: User) => {
+
+            // Add user if we haven't seen this IP before
+            val userFuture = (Global.userManager ? addUser(ip, accId))
+              .mapTo[Option[User]]
+            Await.result(userFuture, timeout.duration) match {
+              case Some(user: User) => {
+                var deadline: BigInteger = 
+                  Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
+                val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
+                  accId, nonce)).mapTo[BigInteger]
+                deadline = Await.result(deadlineFuture, timeout.duration) 
+                if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
                   // Submit nonce to network to verify
                   val submitFuture = (Global.deadlineSubmitter ? submitNonce(
                     user, nonce, deadline)).mapTo[Result]
@@ -80,17 +79,16 @@ with JacksonJsonSupport with FutureSupport {
                       "Deadline submission failure: " + message
                     }
                   }
+                } else {
+                  Global.userManager ! banUser(ip,
+                    LocalDateTime.now().plusMinutes(Config.BAN_TIME))
+                  Global.poolStatistics.incrementBadNonces()
+                  response.setStatus(500)
+                  "You submitted a bad deadline, and are temporarily banned" + 
+                  " for " + Config.BAN_TIME + " minutes."
                 }
-                // User is banned, just return an error
-                case None => respond(
-                  "You are currently banned and cannot submit nonces.")
               }
-            } else {
-              Global.userManager ! banUser(ip,
-                LocalDateTime.now().plusMinutes(Config.BAN_TIME))
-              Global.poolStatistics.incrementBadNonces()
-              response.setStatus(500)
-              "You submitted a bad deadline, and are now temp banned"
+              case None => "You can't submit nonces either because"
             }
           } catch {
             case e: NoSuchElementException => {
