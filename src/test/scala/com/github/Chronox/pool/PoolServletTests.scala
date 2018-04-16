@@ -71,6 +71,8 @@ with DatabaseInit {
     addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
     addServlet(new MockBurstServlet(system), "/test")
     addServlet(new BurstServlet(system), "/burst")
+
+    Thread.sleep(100) // Wait to get the mining Info before starting
   }
 
   test("All servlets up and running"){
@@ -166,18 +168,6 @@ with DatabaseInit {
     Global.rewardPayout ! clearRewards()
   }
 
-  test("Rewards don't get lost on network error"){
-  }
-
-  test("Reward Transactions are successfully sent"){
-  }
-
-  test("Rewards are queue'd when mining information changes"){
-  }
-
-  test("Best deadline is overwritten on better deadline"){
-  }
-
   test("Adding Users pool statistics"){
     Global.userManager ! resetUsers()
 
@@ -227,6 +217,16 @@ with DatabaseInit {
 
     val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
     Await.result(future, timeout.duration) should equal (true)
+  }
+
+  test("Rewards don't get lost on network error"){
+
+  }
+
+  test("Reward Transactions are successfully sent"){
+  }
+
+  test("Rewards are queue'd when mining information changes"){
   }
 
   test("Shabal works properly"){

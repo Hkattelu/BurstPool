@@ -60,32 +60,41 @@ with JacksonJsonSupport with FutureSupport {
               .mapTo[Option[User]]
             Await.result(userFuture, timeout.duration) match {
               case Some(user: User) => {
-                var deadline: BigInteger = 
-                  Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
-                val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
-                  accId, nonce)).mapTo[BigInteger]
-                deadline = Await.result(deadlineFuture, timeout.duration) 
-                if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
-                  // Submit nonce to network to verify
-                  val submitFuture = (Global.deadlineSubmitter ? submitNonce(
-                    user, nonce, deadline)).mapTo[Result]
-                  Await.result(submitFuture, timeout.duration) match {
-                    case Result(Global.SUCCESS_MESSAGE) => {
-                      Global.userManager ! updateSubmitTime(ip)
-                      "Deadline submission success:" + deadline.toString
+                val recipientFuture = (Global.userManager ? 
+                  checkRewardRecipient(accId.toString)).mapTo[Boolean]
+                if (Await.result(recipientFuture, timeout.duration)) {
+                  var deadline: BigInteger = 
+                    Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
+                  val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
+                    accId, nonce)).mapTo[BigInteger]
+                  deadline = Await.result(deadlineFuture, timeout.duration) 
+                  if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
+                    // Submit nonce to network to verify
+                    val submitFuture = (Global.deadlineSubmitter ? submitNonce(
+                      user, nonce, deadline)).mapTo[Result]
+                    Await.result(submitFuture, timeout.duration) match {
+                      case Result(Global.SUCCESS_MESSAGE) => {
+                        Global.userManager ! updateSubmitTime(ip)
+                        "Deadline submission success:" + deadline.toString
+                      }
+                      case Result(message) => {
+                        response.setStatus(500)
+                        "Deadline submission failure: " + message
+                      }
                     }
-                    case Result(message) => {
-                      response.setStatus(500)
-                      "Deadline submission failure: " + message
-                    }
+                  } else {
+                    Global.userManager ! banUser(ip,
+                      LocalDateTime.now().plusMinutes(Config.BAN_TIME))
+                    Global.poolStatistics.incrementBadNonces()
+                    response.setStatus(500)
+                    "You submitted a bad deadline, and are temporarily banned" + 
+                    " for " + Config.BAN_TIME + " minutes."
                   }
                 } else {
-                  Global.userManager ! banUser(ip,
-                    LocalDateTime.now().plusMinutes(Config.BAN_TIME))
-                  Global.poolStatistics.incrementBadNonces()
                   response.setStatus(500)
-                  "You submitted a bad deadline, and are temporarily banned" + 
-                  " for " + Config.BAN_TIME + " minutes."
+                  "You cannot submit nonces unless you reward recipient is" +
+                  " set to " + Config.ACCOUNT_ID + ". This can take up to 5" +
+                  " blocks to update"
                 }
               }
               case None => "You can't submit nonces either because"

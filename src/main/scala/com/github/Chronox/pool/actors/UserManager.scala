@@ -9,6 +9,9 @@ import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
 import scala.util.{ Failure, Success }
 import scala.concurrent.duration._
 import scala.collection.concurrent.TrieMap
+import net.liftweb.json._
+import scalaj.http.Http
+import java.math.BigInteger
 import java.time.LocalDateTime
 import java.sql.Timestamp
 
@@ -20,9 +23,12 @@ case class getActiveUsers()
 case class banUser(ip_address: String, until: LocalDateTime)
 case class refreshUsers()
 case class updateSubmitTime(ip_address: String)
+case class checkRewardRecipient(accId: String)
+case class RewardRecipient(rewardRecipient: String)
 
 class UserManager extends Actor with ActorLogging {
 
+  implicit val formats = DefaultFormats
   var activeUsers: TrieMap[String, User] = TrieMap[String, User]()
   var bannedAddresses = TrieMap[String, LocalDateTime]()
   var netActiveTB = 0.0
@@ -51,7 +57,8 @@ class UserManager extends Actor with ActorLogging {
         newUser.id = accountId
         //newUser.reported_TB = 0.0
         newUser.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
-        newUser.lastSubmitHeight = Global.miningInfo.height.toLong
+        newUser.lastSubmitHeight = 
+          new BigInteger(Global.miningInfo.height).longValue
         activeUsers += (ip_address->newUser)
         Global.poolStatistics.incrementActiveUsers()
         //Global.poolStatistics.addActiveTB(newUser.reported_TB)
@@ -97,6 +104,14 @@ class UserManager extends Actor with ActorLogging {
         activeUsers(ip_address) = userToUpdate
         Global.poolStatistics.updateSubmitTime(userToUpdate.lastSubmitTime)
       } 
+    }
+    case checkRewardRecipient(accId: String) => {
+      val response = scalaj.http.Http(Config.NODE_ADDRESS+"/burst").params(Map(
+        "requestType"->"getRewardRecipient", "account"->accId)).asString.body
+      var recipient : String = null
+      if (!(response contains "error"))
+        recipient = parse(response).extract[RewardRecipient].rewardRecipient
+      sender ! (recipient == Config.ACCOUNT_ID)
     }
   }
 }
