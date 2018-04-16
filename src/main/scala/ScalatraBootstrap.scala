@@ -7,7 +7,6 @@ import org.scalatra._
 import javax.servlet.ServletContext
 
 class ScalatraBootstrap extends LifeCycle with DatabaseInit {
-
   val system = ActorSystem()
 
   override def init(context: ServletContext) {

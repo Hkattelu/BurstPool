@@ -31,13 +31,15 @@ with JacksonJsonSupport with FutureSupport {
 
   get("/"){
     try {
+      println(request.toString)
       params("requestType") match {
         case "submitNonce" => "Submitting nonces only takes POST requests"
         case "sendMoney" => "Sending money only takes POST requests"
         // Return dummy info
         case "getMiningInfo" => Global.MiningInfo("84", "1", "1")
-        case "getBlock" => new BlockResponse("99", "1", 
-          params.getOrElse("block", "1"))
+        case "getBlock" => {
+          new BlockResponse("99", "1", params("block"))
+        }
       }
     } catch {
       case e: NoSuchElementException => {

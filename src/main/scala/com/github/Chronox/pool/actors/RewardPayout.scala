@@ -21,8 +21,8 @@ import java.math.BigInteger
 case class addRewards(blockId: Long, 
   currentSharePercents: Map[Long, BigDecimal],
   historicSharePercents: Map[Long, BigDecimal])
-case class BlockResponse(blockReward: String, 
-  totalFeeNQT: String, block: String)
+case class BlockResponse(blockReward: String, totalFeeNQT: String, 
+  block: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
 case class getRewards()
 case class PayoutRewards()
@@ -47,16 +47,17 @@ class RewardPayout extends Actor with ActorLogging {
   }
 
   def receive() = {
-    case _: PayoutRewards => {
+    case PayoutRewards() => {
       var blockToNQT = scala.collection.mutable.Map[Long, Long]()
-      var userToRewards = scala.collection.mutable.Map[Long, List[Reward]]()
+      var userToRewards = 
+        scala.collection.mutable.Map[Long, ListBuffer[Reward]]()
       var responseFutureList = new ListBuffer[Future[HttpResponse]]()
- 
+      log.info("rewards: " + userToRewards.toString)
+
       // Send out requests for block reward information
       for((blockId, rewards) <- unpaidRewards) 
         responseFutureList += http.singleRequest(HttpRequest(
-          uri = baseURI, entity = FormData(Map("requestType"->"getBlock",
-            "block"->blockId.toString)).toEntity)).mapTo[HttpResponse]
+          uri = baseURI+"?requestType=getBlock&block="+blockId.toString))
 
       // Block until we get the responses, then handle them
       for(future <- responseFutureList.toList) {   
@@ -68,16 +69,13 @@ class RewardPayout extends Actor with ActorLogging {
               val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
                 blockRes.totalFeeNQT.toLong
               val blockId = blockRes.block.toLong
-
-              // Paid out blockNQT is the block value subtracted from pool fee
               blockToNQT += (blockId->((1-Config.POOL_FEE) * rewardNQT).toLong)
-
               // Note the rewards that each user should be getting paid
-              for(reward <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
-                if (userToRewards contains reward.userId) 
-                  reward :: userToRewards(reward.userId)
+              for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
+                if (userToRewards contains r.userId) 
+                  userToRewards(r.userId).append(r)
                 else 
-                  userToRewards += (reward.userId->List[Reward](reward))
+                  userToRewards += (r.userId->ListBuffer[Reward](r))
               } 
             }
           }
@@ -92,7 +90,7 @@ class RewardPayout extends Actor with ActorLogging {
         var markAsPaid = new ListBuffer[Reward]()
 
         // Calculate the actual reward values in NQTs
-        for(reward <- rewards) {
+        for(reward <- rewards.toList) {
           val rewardPercent =
             (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
             (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
@@ -116,7 +114,10 @@ class RewardPayout extends Actor with ActorLogging {
                 res.entity.toString()).extract[TransactionResponse]
               log.info("Tx Id: " + txRes.transaction +
                 ", Broadcasted: " + txRes.broadcast)
-              for(reward <- markAsPaid.toList) reward.isPaid = true
+              for(reward <- markAsPaid.toList) {
+                reward.isPaid = true
+
+              }
             }
             case Failure(error) => log.error(
               "Transaction failed: " + error.toString())
@@ -142,8 +143,8 @@ class RewardPayout extends Actor with ActorLogging {
         } 
       unpaidRewards += (blockId->rewards.values.toList)
     }
-    case _: getRewards => sender ! unpaidRewards.toMap
-    case _: clearRewards => unpaidRewards = TrieMap[Long, List[Reward]]()
+    case getRewards() => sender ! unpaidRewards.toMap
+    case clearRewards() => unpaidRewards = TrieMap[Long, List[Reward]]()
     case Global.setSubmitURI(uri: String) => baseURI = Uri(uri)   
   }
 }

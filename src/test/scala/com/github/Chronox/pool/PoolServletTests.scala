@@ -72,7 +72,9 @@ with DatabaseInit {
     addServlet(new MockBurstServlet(system), "/test")
     addServlet(new BurstServlet(system), "/burst")
 
-    Thread.sleep(100) // Wait to get the mining Info before starting
+    Global.miningInfo = new Global.MiningInfo(
+      "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
+      "54752", "478972")
   }
 
   test("All servlets up and running"){
@@ -220,13 +222,42 @@ with DatabaseInit {
   }
 
   test("Rewards don't get lost on network error"){
+    Global.rewardPayout ! Global.setSubmitURI(testNodeURL)
 
+    var current = Map[Long, BigDecimal]()
+    var historic = Map[Long, BigDecimal]()
+    for(i <- 1 to 4) historic += (i.toLong->quarter)
+    current += (5.toLong->one)
+    Global.rewardPayout ! addRewards(2L, current, historic) //2 causes net error
+    Global.rewardPayout ! PayoutRewards()
+
+    val future = (Global.rewardPayout ? getRewards())
+      .mapTo[Map[Long, List[Reward]]]
+    val calculated = Await.result(future, timeout.duration)
+    var rewards = Map[Long, List[Reward]]()
+    var rewardList = new ListBuffer[Reward]()
+    for(i <- 1 to 4) 
+      rewardList += (new Reward(i, 2L, zero, quarter,false))
+    rewardList += (new Reward(5, 2L, one, zero, false))
+    rewards += (2L->rewardList.toList)
+    calculated.values.head.toSet should equal (rewards.values.head.toSet)
+
+    Global.rewardPayout ! clearRewards()
   }
 
   test("Reward Transactions are successfully sent"){
-  }
+    Global.rewardPayout ! Global.setSubmitURI(testNodeURL)
 
-  test("Rewards are queue'd when mining information changes"){
+    var current = Map[Long, BigDecimal]()
+    var historic = Map[Long, BigDecimal]()
+    for(i <- 1 to 4) historic += (i.toLong->quarter)
+    current += (5.toLong->one)
+    Global.rewardPayout ! addRewards(1, current, historic)
+    Global.rewardPayout ! PayoutRewards()
+    val future = (Global.rewardPayout ? getRewards())
+      .mapTo[Map[Long, List[Reward]]]
+    val calculated = Await.result(future, timeout.duration)
+    calculated.isEmpty should equal (true)
   }
 
   test("Shabal works properly"){

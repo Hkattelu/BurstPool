@@ -35,8 +35,9 @@ with JacksonJsonSupport with FutureSupport {
   get("/"){
     try {
       params("requestType") match {
-        case "submitNonce" => {"Submitting nonces only takes POST requests"}
+        case "submitNonce" => "Submitting nonces only takes POST requests"
         case "getMiningInfo" => Global.miningInfo
+        case "sendMoney" => "Money cannot be sent through this pool"
       }
     } catch {
       case e: NoSuchElementException => {
@@ -107,6 +108,7 @@ with JacksonJsonSupport with FutureSupport {
           }
         }
         case "getMiningInfo" => "Getting mining info only takes GET requests"
+        case "sendMoney" => "Money cannot be sent through this pool"
       }
     } catch {
       case e: NoSuchElementException => {
