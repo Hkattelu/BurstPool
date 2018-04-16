@@ -106,8 +106,9 @@ class UserManager extends Actor with ActorLogging {
       } 
     }
     case checkRewardRecipient(accId: String) => {
-      val response = scalaj.http.Http(Config.NODE_ADDRESS+"/burst").params(Map(
-        "requestType"->"getRewardRecipient", "account"->accId)).asString.body
+      val response = scalaj.http.Http(Config.NODE_ADDRESS+"/burst")
+        .params(Map("requestType"->"getRewardRecipient", "account"->accId))
+        .timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).asString.body
       var recipient : String = null
       if (!(response contains "error"))
         recipient = parse(response).extract[RewardRecipient].rewardRecipient

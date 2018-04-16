@@ -24,4 +24,8 @@ class Reward (
       currentPercent.hashCode ^ historicalPercent.hashCode
     return (if (isPaid) ~result else result)
   }
+  override def toString: String = {
+    return "|userId: " + userId + " ,blockId: " + blockId + " percents: (" + 
+    currentPercent + "," + historicalPercent + "), isPaid: " + isPaid + "|"
+  }
 }

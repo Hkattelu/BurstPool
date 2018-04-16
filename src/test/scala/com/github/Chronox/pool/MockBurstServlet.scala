@@ -31,14 +31,13 @@ with JacksonJsonSupport with FutureSupport {
 
   get("/"){
     try {
-      println(request.toString)
       params("requestType") match {
         case "submitNonce" => "Submitting nonces only takes POST requests"
         case "sendMoney" => "Sending money only takes POST requests"
         // Return dummy info
         case "getMiningInfo" => Global.MiningInfo("84", "1", "1")
         case "getBlock" => {
-          new BlockResponse("99", "1", params("block"))
+          new BlockResponse("99", "1", params.getOrElse("block", "1"))
         }
       }
     } catch {
@@ -52,8 +51,7 @@ with JacksonJsonSupport with FutureSupport {
   post("/") {
     try {
       params("requestType") match {
-        // Return a success response, no matter the nonce
-        case "submitNonce" => {
+        case "submitNonce" => { // Return a success, no matter the nonce
           val secret = params("secretPhrase")
           val accId = new BigInteger(params("accountId")).longValue()
           val nonce = new BigInteger(params("nonce")).longValue()
@@ -62,20 +60,17 @@ with JacksonJsonSupport with FutureSupport {
           val deadline = Await.result(deadlineFuture, timeout.duration).toString
           SubmitResult(Global.SUCCESS_MESSAGE, deadline)
         }
-        // Validate and broadcast tx if recipient = 1
-        // Validate but not broadcast tx if recipient = 0
-        // Throw error if recipient is anything else
         case "sendMoney" => {
           val deadline = params("deadline")
           val recipient = params("recipient")
           val amountNQT = params("amountNQT")
           val feeNQT = params("feeNQT")
           val secret = params("secretPhrase")
-          if (recipient == "1")
-            TransactionResponse("1", true)
-          else if (recipient == "0")
+          if (recipient == "1") // Validate and broadcast tx if recipient = 1
+            TransactionResponse("1", true) 
+          else if (recipient == "0") // Don't broadcast tx if recipient = 0
             TransactionResponse("1", false)
-          else 
+          else // Throw error if recipient is anything else
             Global.ErrorMessage("3", "some error")
         }
         // Return dummy info

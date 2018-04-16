@@ -226,20 +226,23 @@ with DatabaseInit {
 
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
-    for(i <- 1 to 4) historic += (i.toLong->quarter)
-    current += (5.toLong->one)
-    Global.rewardPayout ! addRewards(2L, current, historic) //2 causes net error
+    for(i <- 2 to 5) historic += (i.toLong->quarter)
+    current += (0.toLong->one)
+    Global.rewardPayout ! addRewards(1, current, historic) //2 causes net error
+
+    Thread.sleep(1000)
     Global.rewardPayout ! PayoutRewards()
+    Thread.sleep(1000)
 
     val future = (Global.rewardPayout ? getRewards())
       .mapTo[Map[Long, List[Reward]]]
     val calculated = Await.result(future, timeout.duration)
     var rewards = Map[Long, List[Reward]]()
     var rewardList = new ListBuffer[Reward]()
-    for(i <- 1 to 4) 
-      rewardList += (new Reward(i, 2L, zero, quarter,false))
-    rewardList += (new Reward(5, 2L, one, zero, false))
-    rewards += (2L->rewardList.toList)
+    for(i <- 2 to 5) 
+      rewardList += (new Reward(i, 1L, zero, quarter,false))
+    rewardList += (new Reward(0, 1L, one, zero, false))
+    rewards += (1L->rewardList.toList)
     calculated.values.head.toSet should equal (rewards.values.head.toSet)
 
     Global.rewardPayout ! clearRewards()
@@ -250,14 +253,16 @@ with DatabaseInit {
 
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
-    for(i <- 1 to 4) historic += (i.toLong->quarter)
-    current += (5.toLong->one)
+    current += (1.toLong->one)
     Global.rewardPayout ! addRewards(1, current, historic)
+
+    Thread.sleep(1000)
     Global.rewardPayout ! PayoutRewards()
+    Thread.sleep(1000)
     val future = (Global.rewardPayout ? getRewards())
       .mapTo[Map[Long, List[Reward]]]
     val calculated = Await.result(future, timeout.duration)
-    calculated.isEmpty should equal (true)
+    calculated should equal (Map[Long, List[Reward]]())
   }
 
   test("Shabal works properly"){
