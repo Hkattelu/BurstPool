@@ -63,7 +63,8 @@ with JacksonJsonSupport with FutureSupport {
               case Some(user: User) => {
                 val recipientFuture = (Global.userManager ? 
                   checkRewardRecipient(accId.toString)).mapTo[Boolean]
-                if (Await.result(recipientFuture, timeout.duration)) {
+                val isSet = Await.result(recipientFuture, timeout.duration)
+                if (isSet) {
                   var deadline: BigInteger = 
                     Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
                   val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(

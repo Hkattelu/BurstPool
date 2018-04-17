@@ -113,11 +113,9 @@ class UserManager extends Actor with ActorLogging {
     }
     case checkRewardRecipient(accId: String) => {
       val s = sender
-      val ent = FormData(
-        Map("requestType"->"getRewardRecipient", "account"->accId)).toEntity
-      val response = http.singleRequest(
-        HttpRequest(uri = (Config.NODE_ADDRESS+"/burst"), entity = ent))
-      response onComplete {
+      val checkUrl = Config.NODE_ADDRESS + 
+        "/burst?requestType=getRewardRecipient&account="+accId
+      http.singleRequest(HttpRequest(uri = checkUrl)) onComplete {
         case Success(r: HttpResponse) => {
           r.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body => 
             if (body.utf8String contains "error") s ! false
