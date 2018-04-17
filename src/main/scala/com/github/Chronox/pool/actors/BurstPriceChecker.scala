@@ -31,9 +31,7 @@ class BurstPriceChecker extends Actor with ActorLogging {
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-        {
-          Global.burstPriceInfo = parse(body.utf8String).extract[BurstPriceInfo]  
-        }
+        Global.burstPriceInfo = parse(body.utf8String).extract[BurstPriceInfo]  
       } 
     case resp @ HttpResponse(code, _, _, _) => {
       log.info("Request failed, response code: " + code)

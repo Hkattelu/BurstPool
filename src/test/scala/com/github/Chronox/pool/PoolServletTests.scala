@@ -229,11 +229,9 @@ with DatabaseInit {
     for(i <- 2 to 5) historic += (i.toLong->quarter)
     current += (0.toLong->one)
     Global.rewardPayout ! addRewards(1, current, historic) //2 causes net error
-
-    Thread.sleep(1000)
+    Thread.sleep(100)
     Global.rewardPayout ! PayoutRewards()
     Thread.sleep(1000)
-
     val future = (Global.rewardPayout ? getRewards())
       .mapTo[Map[Long, List[Reward]]]
     val calculated = Await.result(future, timeout.duration)
@@ -255,8 +253,7 @@ with DatabaseInit {
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->one)
     Global.rewardPayout ! addRewards(1, current, historic)
-
-    Thread.sleep(1000)
+    Thread.sleep(100)
     Global.rewardPayout ! PayoutRewards()
     Thread.sleep(1000)
     val future = (Global.rewardPayout ? getRewards())

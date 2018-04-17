@@ -4,13 +4,14 @@ import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.db.User
 
 import akka.actor.{ Actor, ActorLogging }
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
+import akka.util.ByteString
 import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
 import scala.util.{ Failure, Success }
 import scala.concurrent.duration._
 import scala.collection.concurrent.TrieMap
 import net.liftweb.json._
-import scalaj.http.Http
 import java.math.BigInteger
 import java.time.LocalDateTime
 import java.sql.Timestamp
@@ -28,6 +29,11 @@ case class RewardRecipient(rewardRecipient: String)
 
 class UserManager extends Actor with ActorLogging {
 
+  import context.dispatcher
+  final implicit val materializer: ActorMaterializer = 
+    ActorMaterializer(ActorMaterializerSettings(context.system))
+
+  val http = Http(context.system)
   implicit val formats = DefaultFormats
   var activeUsers: TrieMap[String, User] = TrieMap[String, User]()
   var bannedAddresses = TrieMap[String, LocalDateTime]()
@@ -106,13 +112,21 @@ class UserManager extends Actor with ActorLogging {
       } 
     }
     case checkRewardRecipient(accId: String) => {
-      val response = scalaj.http.Http(Config.NODE_ADDRESS+"/burst")
-        .params(Map("requestType"->"getRewardRecipient", "account"->accId))
-        .timeout(connTimeoutMs = 2000, readTimeoutMs = 5000).asString.body
-      var recipient : String = null
-      if (!(response contains "error"))
-        recipient = parse(response).extract[RewardRecipient].rewardRecipient
-      sender ! (recipient == Config.ACCOUNT_ID)
+      val s = sender
+      val ent = FormData(
+        Map("requestType"->"getRewardRecipient", "account"->accId)).toEntity
+      val response = http.singleRequest(
+        HttpRequest(uri = (Config.NODE_ADDRESS+"/burst"), entity = ent))
+      response onComplete {
+        case Success(r: HttpResponse) => {
+          r.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body => 
+            if (body.utf8String contains "error") s ! false
+            else s ! (parse(body.utf8String).extract[RewardRecipient]
+              .rewardRecipient == Config.ACCOUNT_ID)
+          }
+        }
+        case Failure(e) => s ! false
+      }
     }
   }
 }

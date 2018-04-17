@@ -75,14 +75,13 @@ class RewardPayout extends Actor with ActorLogging {
                 else 
                   userToRewards += (r.userId->ListBuffer[Reward](r))
               }
-              log.info("TO PAY" + userToRewards.toString)
             }
           }
           case Failure(e) => log.error(
             "Failed to receive block information:" + e.toString())
         }
       }
-      Thread.sleep(10)
+      Thread.sleep(100)
       // Compute total reward for each user, then pay it out
       for((id, rewards) <- userToRewards) {
         var amount: Long = 0 - burstToNQT
