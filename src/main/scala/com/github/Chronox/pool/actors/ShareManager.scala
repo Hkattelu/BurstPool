@@ -36,18 +36,18 @@ class ShareManager extends Actor with ActorLogging {
       currentShares contains user.id match {
         case true => currentShares(user.id) = share
         case false => currentShares += (user.id->share)
-      } 
+      }
     }
     case dumpCurrentShares() => {
       historicShareQueue.enqueue(currentShares clone)
+      Global.poolDB.addShareList(currentShares.values.toList)
       currentShares.clear()
     }
     case queueCurrentShares(blockId: Long) => {
       Global.rewardPayout ! addRewards(blockId, 
         sharesToRewardPercents(currentShares.toMap), 
         historicShareQueue.getPercents())
-      historicShareQueue.enqueue(currentShares clone)
-      currentShares.clear()
+      self ! dumpCurrentShares()
     }
     case getCurrentPercents() => {
       sender ! sharesToRewardPercents(currentShares.toMap)

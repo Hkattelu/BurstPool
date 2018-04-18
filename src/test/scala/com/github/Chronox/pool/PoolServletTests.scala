@@ -36,7 +36,7 @@ with DatabaseInit {
   override def beforeAll(){
     super.beforeAll()
     Config.init()
-    configureDb()
+    configureDb(true)
     Global.burstPriceChecker = 
       system.actorOf(Props[BurstPriceChecker], name = "BurstPriceChecker")
     Global.miningInfoUpdater = 
@@ -58,8 +58,8 @@ with DatabaseInit {
       case Some(conn) =>
         val networkConn = 
           conn.asInstanceOf[org.eclipse.jetty.server.NetworkConnector]
-        val host = Option(networkConn.getHost) getOrElse "localhost"
-        val port = networkConn.getLocalPort
+        val host = Option(networkConn.getHost).getOrElse("localhost")
+        val port = networkConn.getLocalPort()
         testNodeURL = "http://" + host + ":" + port + "/test"
         require(port > 0, "The detected local port is < 1, that's not allowed")
         "http://%s:%d".format(host, port)
@@ -114,9 +114,9 @@ with DatabaseInit {
     // Add some shares, then calculate reward split of those shares
     val fraction = BigDecimal.valueOf(16)/BigDecimal.valueOf(15)
     for(i <- 1 to 4) {
-      percents += (i.toLong->(fraction/BigDecimal.valueOf(1 << i))
+      percents += (-i.toLong->(fraction/BigDecimal.valueOf(1 << i))
         .setScale(8, RoundingMode.HALF_EVEN))
-      Global.shareManager ! addShare(new User(i), 0, 0, 1 << i)
+      Global.shareManager ! addShare(new User(-i), -i, 0, 1 << i)
     }
     val future = (Global.shareManager ? getCurrentPercents()
       ).mapTo[Map[Long, BigDecimal]]
@@ -141,9 +141,9 @@ with DatabaseInit {
     Global.shareManager ! dumpCurrentShares()
 
     // Save 100+ shares to historic shares, they'll overwrite the random shares
-    for(i <- 1 to (Config.MIN_HEIGHT_DIFF + 100)){ 
-      for(j <- 1 to 4) Global.shareManager ! addShare(users(j), 0, 0, 1 << j)
-        Global.shareManager ! dumpCurrentShares()
+    for(i <- 1 to (Config.MIN_HEIGHT_DIFF + 10)) { 
+      for(j <- 1 to 4) Global.shareManager ! addShare(users(j), i, 0, 1 << j)
+      Global.shareManager ! dumpCurrentShares()
     }
     val future = (Global.shareManager ? getAverageHistoricalPercents()
       ).mapTo[Map[Long, BigDecimal]]
@@ -155,16 +155,16 @@ with DatabaseInit {
     var historic = Map[Long, BigDecimal]()
     for(i <- 1 to 4) historic += (i.toLong->quarter)
     current += (5.toLong->one)
-    Global.rewardPayout ! addRewards(1, current, historic)
+    Global.rewardPayout ! addRewards(3, current, historic)
     val future = (Global.rewardPayout ? getRewards())
       .mapTo[Map[Long, List[Reward]]]
     val calculated = Await.result(future, timeout.duration)
     var rewards = Map[Long, List[Reward]]()
     var rewardList = new ListBuffer[Reward]()
     for(i <- 1 to 4) 
-      rewardList += (new Reward(i, 1, zero, quarter,false))
-    rewardList += (new Reward(5, 1, one, zero, false))
-    rewards += (1L->rewardList.toList)
+      rewardList += (new Reward(i, 3, zero, quarter,false))
+    rewardList += (new Reward(5, 3, one, zero, false))
+    rewards += (3L->rewardList.toList)
     calculated.values.head.toSet should equal (rewards.values.head.toSet)
     Global.rewardPayout ! clearRewards()
   }
@@ -222,6 +222,7 @@ with DatabaseInit {
 
   test("Rewards don't get lost on network error"){
     Global.rewardPayout ! Global.setSubmitURI(testNodeURL)
+    Thread.sleep(1000)
 
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
@@ -251,7 +252,7 @@ with DatabaseInit {
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->one)
-    Global.rewardPayout ! addRewards(1, current, historic)
+    Global.rewardPayout ! addRewards(2, current, historic)
     Thread.sleep(100)
     Global.rewardPayout ! PayoutRewards()
     Thread.sleep(1000)

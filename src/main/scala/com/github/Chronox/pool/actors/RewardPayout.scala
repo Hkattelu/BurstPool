@@ -63,17 +63,24 @@ class RewardPayout extends Actor with ActorLogging {
             parseFutureList += res.entity.dataBytes.runFold(ByteString(""))(
               _ ++ _) andThen { 
               case Success(body: akka.util.ByteString) => {
-                val blockRes = parse(body.utf8String).extract[BlockResponse]
-                val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
-                  blockRes.totalFeeNQT.toLong
-                val blockId = blockRes.block.toLong
-                blockToNQT += (blockId->((1-Config.POOL_FEE)*rewardNQT).toLong)
-                // Note the rewards that each user should be getting paid
-                for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
-                  if (userToRewards contains r.userId) 
-                    userToRewards(r.userId).append(r)
-                  else 
-                    userToRewards += (r.userId->ListBuffer[Reward](r))
+                if(body.utf8String contains "error"){
+                  val errorRes = parse(body.utf8String)
+                    .extract[Global.ErrorMessage]
+                  log.error("Error code " + errorRes.errorCode + ": " + 
+                    errorRes.errorDescription)
+                } else {
+                  val blockRes = parse(body.utf8String).extract[BlockResponse]
+                  val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
+                    blockRes.totalFeeNQT.toLong
+                  val blockId = blockRes.block.toLong
+                  blockToNQT+=(blockId->((1-Config.POOL_FEE)*rewardNQT).toLong)
+                  // Note the rewards that each user should be getting paid
+                  for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
+                    if (userToRewards contains r.userId) 
+                      userToRewards(r.userId).append(r)
+                    else 
+                      userToRewards += (r.userId->ListBuffer[Reward](r))
+                  }
                 }
               }
             }
@@ -120,7 +127,8 @@ class RewardPayout extends Actor with ActorLogging {
                   val tx = parse(body.utf8String).extract[TransactionResponse]
                   if(tx.broadcast){
                     log.info("Tx " + tx.transaction + " broadcasted!")
-                    for(reward <- sentRewards) reward.isPaid = true
+                    for(reward <- sentRewards.toList) reward.isPaid = true
+                    Global.poolDB.markRewardsAsPaid(sentRewards.toList)
                     unpaidRewards = unpaidRewards.map{ 
                       case(k,v) => (k, v.filter(!_.isPaid))}
                     unpaidRewards.retain((k,v) => !v.isEmpty)      
@@ -154,7 +162,9 @@ class RewardPayout extends Actor with ActorLogging {
         case false => rewards += (
           id->(new Reward(id, blockId, percent, 0.0, false)))
       } 
-      unpaidRewards += (blockId->rewards.values.toList)
+      val rewardList = rewards.values.toList
+      unpaidRewards += (blockId->rewardList)
+      Global.poolDB.addRewardList(rewardList)
     }
     case getRewards() => sender ! unpaidRewards.toMap
     case clearRewards() => unpaidRewards = TrieMap[Long, List[Reward]]()

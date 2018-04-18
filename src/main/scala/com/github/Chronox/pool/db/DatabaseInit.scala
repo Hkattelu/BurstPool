@@ -11,7 +11,7 @@ trait DatabaseInit {
   val logger = LoggerFactory.getLogger(getClass)
   var cpds = new ComboPooledDataSource
 
-  def configureDb() {
+  def configureDb(clearDatabase: Boolean = false) {
     val databaseUsername = Config.DB_USER
     val databasePassword = Config.DB_PASS
     val databaseConnection = "jdbc:mysql://" + Config.DB_HOST + ":" + 
@@ -30,8 +30,13 @@ trait DatabaseInit {
     def connection = {Session.create(cpds.getConnection(), new MySQLAdapter)}
 
     SessionFactory.concreteFactory = Some(() => connection)
-    try {transaction{PoolSchema.create}} 
-    catch {case e: Throwable => println("Database already created")}
+    try {PoolSchema.generateDB()} 
+    catch {case e: Throwable => println("Schema already created. Continuing..")}
+
+    if(clearDatabase){
+      try{PoolSchema.clearAll()}
+      catch {case e: Throwable => println("Couldn't clear DB: " + e.toString)}
+    }
   }
 
   def closeDbConnection() {

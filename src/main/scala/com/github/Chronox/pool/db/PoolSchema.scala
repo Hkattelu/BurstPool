@@ -12,14 +12,12 @@ import java.util.concurrent.ConcurrentLinkedQueue
   
 object PoolSchema extends Schema {
 
-  // Table declarations
   val users = table[User]
   val blocks = table[Block] 
   val rewards = table[Reward]
   val shares = table[Share]
   val pool = table[Pool]
 
-  // Index and candidate key delcarations
   on(users)(u => declare(
     u.id is (indexed),
     u.lastSubmitHeight is (indexed),
@@ -30,7 +28,6 @@ object PoolSchema extends Schema {
   on(rewards)(r => declare(columns(r.userId, r.blockId) are (indexed)))
   on(shares)(s => declare(columns(s.blockId, s.userId) are (indexed)))
 
-  // One to many relations
   val usersToShares = oneToManyRelation(users, shares).via(
     (u, s) => u.id === s.userId)
   val usersToRewards = oneToManyRelation(users, rewards).via(
@@ -40,7 +37,6 @@ object PoolSchema extends Schema {
   val blocksToRewards = oneToManyRelation(blocks, rewards).via(
     (b, r) => b.id === r.blockId)
 
-  // Foreign Key constraints
   usersToShares.foreignKeyDeclaration.constrainReference(onDelete cascade)
   usersToRewards.foreignKeyDeclaration.constrainReference(onDelete cascade)
   blocksToShares.foreignKeyDeclaration.constrainReference(onDelete cascade)
@@ -50,7 +46,17 @@ object PoolSchema extends Schema {
     foreignKeyDeclaration: ForeignKeyDeclaration) =
   foreignKeyDeclaration.constrainReference
 
-  // Queries
+  def generateDB() = {transaction{this.create}}
+
+  def clearAll() = {
+    transaction{ 
+      users.deleteWhere(u => 1 === 1)
+      blocks.deleteWhere(b => 1 === 1)
+      rewards.deleteWhere(r => 1 === 1)
+      shares.deleteWhere(s => 1 === 1)
+    }
+  }
+
   def loadActiveUsers(): TrieMap[String, User] = {
     var activeUsers = TrieMap[String, User]()
     transaction {
@@ -86,6 +92,10 @@ object PoolSchema extends Schema {
     return userShares
   }
 
+  def addShareList(shareList: List[Share]) = {
+    transaction{shares.insert(shareList)}
+  }
+
   def loadRewardShares(): TrieMap[Long, List[Reward]] = {
     var rewardsToPay = TrieMap[Long, List[Reward]]()
     transaction {
@@ -98,5 +108,13 @@ object PoolSchema extends Schema {
       }
     }
     return rewardsToPay
+  }
+
+  def addRewardList(rewardList: List[Reward]) = {
+    transaction{rewards.insert(rewardList)}
+  }
+
+  def markRewardsAsPaid(rewardList: List[Reward]) =  {
+    transaction{rewards.update(rewardList)}
   }
 }
