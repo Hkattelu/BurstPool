@@ -160,21 +160,4 @@ class RewardPayout extends Actor with ActorLogging {
     case clearRewards() => unpaidRewards = TrieMap[Long, List[Reward]]()
     case Global.setSubmitURI(uri: String) => baseURI = Uri(uri)   
   }
-
-  def extractBlock(body: akka.util.ByteString, userToRewards: 
-    scala.collection.mutable.Map[Long, ListBuffer[Reward]],
-    blockToNQT: scala.collection.mutable.Map[Long, Long]) = {
-    val blockRes = parse(body.utf8String).extract[BlockResponse]
-    val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
-      blockRes.totalFeeNQT.toLong
-    val blockId = blockRes.block.toLong
-    blockToNQT += (blockId->((1-Config.POOL_FEE)*rewardNQT).toLong)
-    // Note the rewards that each user should be getting paid
-    for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
-      if (userToRewards contains r.userId) 
-        userToRewards(r.userId).append(r)
-      else 
-        userToRewards += (r.userId->ListBuffer[Reward](r))
-    }
-  }
 }

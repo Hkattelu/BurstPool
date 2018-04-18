@@ -1,17 +1,18 @@
 package com.github.Chronox.pool.db
 
 import com.mchange.v2.c3p0.ComboPooledDataSource
-import org.squeryl.adapters.{H2Adapter, MySQLAdapter}
+import org.squeryl.adapters.MySQLAdapter
 import org.squeryl.Session
 import org.squeryl.SessionFactory
 import org.slf4j.LoggerFactory
+import org.squeryl.PrimitiveTypeMode._
 
 trait DatabaseInit {
   val logger = LoggerFactory.getLogger(getClass)
 
   val databaseUsername = "root"
   val databasePassword = ""
-  val databaseConnection = "jdbc:mysql:localhost:3306"
+  val databaseConnection = "jdbc:mysql://localhost:3306/pool"
 
   var cpds = new ComboPooledDataSource
 
@@ -28,10 +29,18 @@ trait DatabaseInit {
     cpds.setMaxPoolSize(50)
     cpds.setTestConnectionOnCheckin(true)
 
+    def connection = {
+      Session.create(
+      //  java.sql.DriverManager.getConnection(
+      //  databaseConnection, databaseUsername, databasePassword),
+        cpds.getConnection(),
+        new MySQLAdapter)
+    }
+
     SessionFactory.concreteFactory = Some(() => connection)
 
-    def connection = {
-      Session.create(cpds.getConnection, new MySQLAdapter)
+    transaction {
+      PoolSchema.create
     }
   }
 

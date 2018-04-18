@@ -53,10 +53,8 @@ object PoolSchema extends Schema {
   // Queries
   def loadActiveUsers(): TrieMap[String, User] = {
     var activeUsers = TrieMap[String, User]()
-    transaction {
-      for (activeUser <- users.where(u => u.isActive === true))
-        activeUsers += (activeUser.ip->activeUser)
-    }
+    for(activeUser <- users.where(u => u.isActive === true))
+      activeUsers += (activeUser.ip->activeUser)
     return activeUsers
   }
 
