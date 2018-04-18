@@ -37,7 +37,7 @@ class MiningInfoUpdater extends Actor with ActorLogging {
             log.error("Request failed, response status: " + r.status)
             r.discardEntityBytes()
           } else { 
-            r.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+            r.entity.dataBytes.runFold(ByteString(""))(_ ++ _) foreach { body =>
               {
                 Global.lastBlockInfo = 
                   parse(body.utf8String).extract[Global.LastBlockInfo]

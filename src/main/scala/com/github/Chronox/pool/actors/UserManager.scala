@@ -117,7 +117,7 @@ class UserManager extends Actor with ActorLogging {
         "/burst?requestType=getRewardRecipient&account="+accId
       http.singleRequest(HttpRequest(uri = checkUrl)) onComplete {
         case Success(r: HttpResponse) => {
-          r.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body => 
+          r.entity.dataBytes.runFold(ByteString(""))(_ ++ _) foreach { body => 
             if (body.utf8String contains "error") s ! false
             else s ! (parse(body.utf8String).extract[RewardRecipient]
               .rewardRecipient == Config.ACCOUNT_ID)

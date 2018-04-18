@@ -52,28 +52,29 @@ class RewardPayout extends Actor with ActorLogging {
       var userToRewards = 
         scala.collection.mutable.Map[Long, ListBuffer[Reward]]()
       var responseFutureList = new ListBuffer[Future[HttpResponse]]()
+      val parseFutureList = new ListBuffer[Future[akka.util.ByteString]]()
 
       // Send out requests for block reward information
-      for((blockId, rewards) <- unpaidRewards) 
-        responseFutureList += http.singleRequest(HttpRequest(
+      for((blockId, rewards) <- unpaidRewards) {
+        val future = http.singleRequest(HttpRequest(
           uri = baseURI+"?requestType=getBlock&block="+blockId.toString))
-      // Block until we get the responses, then handle them
-      for(future <- responseFutureList) {   
-        Await.ready(future, timeout.duration).value.get match {
+        responseFutureList += future andThen {
           case Success(res: HttpResponse) => {
-            res.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach 
-              { body =>
-              val blockRes = parse(body.utf8String).extract[BlockResponse]
-              val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
-                blockRes.totalFeeNQT.toLong
-              val blockId = blockRes.block.toLong
-              blockToNQT += (blockId->((1-Config.POOL_FEE) * rewardNQT).toLong)
-              // Note the rewards that each user should be getting paid
-              for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
-                if (userToRewards contains r.userId) 
-                  userToRewards(r.userId).append(r)
-                else 
-                  userToRewards += (r.userId->ListBuffer[Reward](r))
+            parseFutureList += res.entity.dataBytes.runFold(ByteString(""))(
+              _ ++ _) andThen { 
+              case Success(body: akka.util.ByteString) => {
+                val blockRes = parse(body.utf8String).extract[BlockResponse]
+                val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
+                  blockRes.totalFeeNQT.toLong
+                val blockId = blockRes.block.toLong
+                blockToNQT += (blockId->((1-Config.POOL_FEE)*rewardNQT).toLong)
+                // Note the rewards that each user should be getting paid
+                for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
+                  if (userToRewards contains r.userId) 
+                    userToRewards(r.userId).append(r)
+                  else 
+                    userToRewards += (r.userId->ListBuffer[Reward](r))
+                }
               }
             }
           }
@@ -81,7 +82,11 @@ class RewardPayout extends Actor with ActorLogging {
             "Failed to receive block information:" + e.toString())
         }
       }
-      Thread.sleep(100)
+
+      // Block until done receiving and parsing the responses
+      for(future <- responseFutureList) Await.ready(future, timeout.duration)
+      for(future <- parseFutureList) Await.ready(future, timeout.duration)
+
       // Compute total reward for each user, then pay it out
       for((id, rewards) <- userToRewards) {
         var amount: Long = 0 - burstToNQT
@@ -154,5 +159,22 @@ class RewardPayout extends Actor with ActorLogging {
     case getRewards() => sender ! unpaidRewards.toMap
     case clearRewards() => unpaidRewards = TrieMap[Long, List[Reward]]()
     case Global.setSubmitURI(uri: String) => baseURI = Uri(uri)   
+  }
+
+  def extractBlock(body: akka.util.ByteString, userToRewards: 
+    scala.collection.mutable.Map[Long, ListBuffer[Reward]],
+    blockToNQT: scala.collection.mutable.Map[Long, Long]) = {
+    val blockRes = parse(body.utf8String).extract[BlockResponse]
+    val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
+      blockRes.totalFeeNQT.toLong
+    val blockId = blockRes.block.toLong
+    blockToNQT += (blockId->((1-Config.POOL_FEE)*rewardNQT).toLong)
+    // Note the rewards that each user should be getting paid
+    for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
+      if (userToRewards contains r.userId) 
+        userToRewards(r.userId).append(r)
+      else 
+        userToRewards += (r.userId->ListBuffer[Reward](r))
+    }
   }
 }
