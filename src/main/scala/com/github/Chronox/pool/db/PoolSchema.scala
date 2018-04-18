@@ -53,37 +53,35 @@ object PoolSchema extends Schema {
   // Queries
   def loadActiveUsers(): TrieMap[String, User] = {
     var activeUsers = TrieMap[String, User]()
-    for(activeUser <- users.where(u => u.isActive === true))
-      activeUsers += (activeUser.ip->activeUser)
+    transaction {
+      for(activeUser <- users.where(u => u.isActive === true))
+        activeUsers += (activeUser.ip->activeUser)
+    }
     return activeUsers
   }
 
   def loadHistoricShares(): ConcurrentLinkedQueue[TrieMap[Long, Share]] = {
     var historicQueue = new ConcurrentLinkedQueue[TrieMap[Long, Share]]()
-      for(i <- 1 to Config.MIN_HEIGHT_DIFF) {
-        transaction {   
-          val block = blocks.where(
-            b => b.height === (Global.miningInfo.height.toLong - i)).single
-          var userShares = TrieMap[Long, Share]()
-          if (block != None) {
-            for(share <- shares.where(s => s.blockId === block.id).toList)
-              userShares += (share.userId->share)   
-          }
-          historicQueue.add(userShares)
-        }   
-      }
+    transaction { 
+      val recentBlocks = from(blocks)(b => 
+        select(b) orderBy(b.height desc)).page(0, Config.MIN_HEIGHT_DIFF).toList
+      var userShares = TrieMap[Long, Share]()
+      for(block <- recentBlocks) 
+        for(share <- shares.where(s => s.blockId === block.id).toList)
+          userShares += (share.userId->share)   
+        historicQueue.add(userShares)   
+    }
     return historicQueue
   }
 
   def loadCurrentShares(): TrieMap[Long, Share] = {
     var userShares = TrieMap[Long, Share]()
     transaction {
-      val block = blocks.where(
-        b => b.height === (Global.miningInfo.height.toLong - 1)).single
-      if (block != None) {
+      val currentBlock = from(blocks)(b => 
+        select(b) orderBy(b.height desc)).page(0, 1).toList
+      for (block <- currentBlock)
         for(share <- shares.where(s => s.blockId === block.id).toList)
           userShares += (share.userId->share)   
-      }
     }
     return userShares
   }
@@ -92,7 +90,7 @@ object PoolSchema extends Schema {
     var rewardsToPay = TrieMap[Long, List[Reward]]()
     transaction {
       var rewardList = rewards.where(r => r.isPaid === false).toList
-      for (reward <- rewardList) {
+      for(reward <- rewardList) {
         (rewardsToPay contains reward.userId) match {
           case true => reward :: rewardsToPay(reward.userId)
           case false => rewardsToPay += (reward.userId->List[Reward](reward))

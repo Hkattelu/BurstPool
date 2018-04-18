@@ -38,10 +38,8 @@ trait DatabaseInit {
     }
 
     SessionFactory.concreteFactory = Some(() => connection)
-
-    transaction {
-      PoolSchema.create
-    }
+    try { transaction {PoolSchema.create}} 
+    catch {case e: Throwable => println("Database already created")}
   }
 
   def closeDbConnection() {

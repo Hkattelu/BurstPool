@@ -42,9 +42,7 @@ class UserManager extends Actor with ActorLogging {
   var netActiveTB = 0.0
 
   override def preStart() {
-    transaction {
-      activeUsers = Global.poolDB.loadActiveUsers()
-    }
+    activeUsers = Global.poolDB.loadActiveUsers()
   }
   
   def receive() = {

@@ -1,6 +1,7 @@
 package com.github.Chronox.pool.actors
 import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.db.{Share, Reward}
+import org.squeryl.PrimitiveTypeMode._
 
 import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
@@ -43,7 +44,7 @@ class RewardPayout extends Actor with ActorLogging {
   var baseURI = Uri(Config.NODE_ADDRESS + "/burst")
 
   override def preStart() {
-    //unpaidRewards = Global.poolDB.loadRewardShares()
+    unpaidRewards = Global.poolDB.loadRewardShares()
   }
 
   def receive() = {
