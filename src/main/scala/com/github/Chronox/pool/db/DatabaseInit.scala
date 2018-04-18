@@ -1,5 +1,5 @@
 package com.github.Chronox.pool.db
-
+import com.github.Chronox.pool.Config
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.squeryl.adapters.MySQLAdapter
 import org.squeryl.Session
@@ -9,19 +9,17 @@ import org.squeryl.PrimitiveTypeMode._
 
 trait DatabaseInit {
   val logger = LoggerFactory.getLogger(getClass)
-
-  val databaseUsername = "root"
-  val databasePassword = ""
-  val databaseConnection = "jdbc:mysql://localhost:3306/pool"
-
   var cpds = new ComboPooledDataSource
 
   def configureDb() {
+    val databaseUsername = Config.DB_USER
+    val databasePassword = Config.DB_PASS
+    val databaseConnection = "jdbc:mysql://" + Config.DB_HOST + ":" + 
+      Config.DB_PORT + "/" + Config.DB_NAME
     cpds.setDriverClass("com.mysql.jdbc.Driver")
     cpds.setJdbcUrl(databaseConnection)
     cpds.setUser(databaseUsername)
     cpds.setPassword(databasePassword)
-
     cpds.setMinPoolSize(1)
     cpds.setInitialPoolSize(4)
     cpds.setNumHelperThreads(4)
@@ -29,16 +27,10 @@ trait DatabaseInit {
     cpds.setMaxPoolSize(50)
     cpds.setTestConnectionOnCheckin(true)
 
-    def connection = {
-      Session.create(
-      //  java.sql.DriverManager.getConnection(
-      //  databaseConnection, databaseUsername, databasePassword),
-        cpds.getConnection(),
-        new MySQLAdapter)
-    }
+    def connection = {Session.create(cpds.getConnection(), new MySQLAdapter)}
 
     SessionFactory.concreteFactory = Some(() => connection)
-    try { transaction {PoolSchema.create}} 
+    try {transaction{PoolSchema.create}} 
     catch {case e: Throwable => println("Database already created")}
   }
 

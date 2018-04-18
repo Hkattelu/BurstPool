@@ -1,9 +1,6 @@
 package com.github.Chronox.pool.actors
-
 import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.db.User
-import com.github.Chronox.pool.db.DatabaseInit
-import org.squeryl.PrimitiveTypeMode._
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http

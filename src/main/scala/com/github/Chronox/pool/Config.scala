@@ -18,18 +18,20 @@ object Config {
   var MIN_HEIGHT_DIFF: Int = 0
   var POOL_STRATEGY: String = ""
   var TARGET_DEADLINE: BigInteger = BigInteger.valueOf(0L)
+  var DB_USER: String = ""
+  var DB_PASS: String = ""
+  var DB_HOST: String = "" 
+  var DB_PORT: String = ""
+  var DB_NAME: String = ""
 
   def init(): Boolean = {
     val fname = "/config.json"
     var json: String = ""
     for (line <- Source.fromURL(getClass.getResource(fname)).getLines)
-     json += line
+      json += line
 
-    val result = try {
-      JSON.parseFull(json)
-    } catch {
-      case ex: Exception => ex.printStackTrace()
-    }
+    val result = try {JSON.parseFull(json)} 
+      catch {case ex: Exception => ex.printStackTrace()}
 
     result match {
       case None => {
@@ -54,6 +56,11 @@ object Config {
         POOL_STRATEGY = elements.getOrElse("POOL_STRATEGY", "STANDARD")
         TARGET_DEADLINE = BigInteger.valueOf(
           elements.getOrElse("TARGET_DEADLINE", "2592000").toLong)
+        DB_USER = elements.getOrElse("DB_USER", "root")
+        DB_PASS = elements.getOrElse("DB_PASS", "")
+        DB_HOST = elements.getOrElse("DB_HOST", "localhost")
+        DB_PORT = elements.getOrElse("DB_PORT", "3306")
+        DB_NAME = elements.getOrElse("DB_NAME", "ChronoxPool")
         return true
       }
     }

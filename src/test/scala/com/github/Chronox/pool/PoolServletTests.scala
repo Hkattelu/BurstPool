@@ -1,5 +1,4 @@
 package com.github.Chronox.pool
-
 import com.github.Chronox.pool._
 import com.github.Chronox.pool.actors._
 import com.github.Chronox.pool.servlets._
