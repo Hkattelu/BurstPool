@@ -114,40 +114,57 @@ with JacksonJsonSupport with FutureSupport {
     nonce: Long, user: User) {
     val recipientFuture = (Global.userManager ? 
       checkRewardRecipient(accId)).mapTo[Boolean]
-    val isSet = Await.result(recipientFuture, timeout.duration)
-    if (isSet) {
-      var deadline: BigInteger = 
-        Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
-      val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
-        accId, nonce)).mapTo[BigInteger]
-      deadline = Await.result(deadlineFuture, timeout.duration) 
-      if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
-        // Submit nonce to network to verify
-        val submitFuture = (Global.deadlineSubmitter ? submitNonce(
-          user, nonce, deadline)).mapTo[Result]
-        Await.result(submitFuture, timeout.duration) match {
-          case Result(Global.SUCCESS_MESSAGE) => {
-            Global.userManager ! updateSubmitTime(accId)
-            "Deadline submission success:" + deadline.toString
+    recipientFuture onComplete {
+      case Success(true) => {
+        var deadline: BigInteger = 
+          Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
+        val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
+          accId, nonce)).mapTo[BigInteger]
+        deadlineFuture onComplete {
+          case Success(deadline: BigInteger) => {
+            if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
+              // Submit nonce to network to verify
+              val submitFuture = (Global.deadlineSubmitter ? submitNonce(
+                user, nonce, deadline)).mapTo[Result]
+              submitFuture onComplete {
+                case Success(Result(Global.SUCCESS_MESSAGE)) => {
+                  Global.userManager ! updateSubmitTime(accId)
+                  "Deadline submission success: " + deadline.toString
+                }
+                case Success(Result(message)) => {
+                  response.setStatus(500)
+                  "Deadline submission failure: " + message
+                }
+                case Failure(e: Throwable) => {
+                  response.setStatus(500)
+                  "Failure while submitting deadline: " + e.toString
+                }
+              }
+            } else {
+              Global.userManager ! banUser(ip,
+                LocalDateTime.now().plusMinutes(Config.BAN_TIME))
+              Global.poolStatistics.incrementBadNonces()
+              response.setStatus(500)
+              "You submitted a bad deadline, and are temporarily banned" + 
+              " for " + Config.BAN_TIME + " minutes."
+            }
           }
-          case Result(message) => {
+          case Failure(e: Throwable) => {
             response.setStatus(500)
-            "Deadline submission failure: " + message
+            "Failure on deadline calculation: " + e.toString
           }
         }
-      } else {
-        Global.userManager ! banUser(ip,
-          LocalDateTime.now().plusMinutes(Config.BAN_TIME))
-        Global.poolStatistics.incrementBadNonces()
-        response.setStatus(500)
-        "You submitted a bad deadline, and are temporarily banned" + 
-        " for " + Config.BAN_TIME + " minutes."
       }
-    } else {
-      response.setStatus(500)
-      "You cannot submit nonces unless you reward recipient is" +
-      " set to " + Config.ACCOUNT_ID + ". This can take up to 5" +
-      " blocks to update"
+      case Success(false) => {
+        response.setStatus(500)
+        "You cannot submit nonces unless you reward recipient is" +
+        " set to " + Config.ACCOUNT_ID + ". This can take up to 5" +
+        " blocks to update"
+      }
+      case Failure(e: Throwable) => {
+        response.setStatus(500)
+        "Failure while getting reward recipient: " + e.toString
+      }
     }
   } 
 }
