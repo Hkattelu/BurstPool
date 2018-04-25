@@ -204,7 +204,8 @@ with DatabaseInit {
     Global.userManager ! banUser("1", LocalDateTime.now().plusSeconds(5))
     Global.userManager ? addUser("1", 1)
 
-    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
+    val future = (Global.userManager ? containsActiveUser("1", 1))
+      .mapTo[Boolean]
     Await.result(future, timeout.duration) should equal (false)
   }
 
@@ -216,7 +217,8 @@ with DatabaseInit {
     Global.userManager ! refreshUsers()
     Global.userManager ? addUser("1", 2)
 
-    val future = (Global.userManager ? containsUser("1")).mapTo[Boolean]
+    val future = (Global.userManager ? containsActiveUser("1", 2))
+      .mapTo[Boolean]
     Await.result(future, timeout.duration) should equal (true)
   }
 

@@ -57,11 +57,43 @@ object PoolSchema extends Schema {
     }
   }
 
-  def loadActiveUsers(): TrieMap[String, User] = {
-    var activeUsers = TrieMap[String, User]()
+  def addUser(user: User): Boolean = {
+    try {
+      transaction {
+        users.insert(user)
+      }
+    } catch { case e: Throwable => {
+        println("Add user error: " + e.toString)
+        return false
+      }
+    }
+    return true
+  }
+
+  def getInactiveUser(accId: Long): User = {
+    var user: User = null
+    try {
+      transaction {
+        user = users.where(u => u.id === accId and u.isActive === false).single
+      }
+    } catch {case e: Throwable => {
+        println("Get User error: " + e.toString)
+        return null
+      }
+    }
+    return user
+  }
+
+  def updateUsers(toUpdateUsers: List[User]) = {
+    try { transaction { users.update(toUpdateUsers) } } 
+    catch {case e: Throwable => { println("Get User error: " + e.toString) }}
+  }
+
+  def loadActiveUsers(): TrieMap[Long, User] = {
+    var activeUsers = TrieMap[Long, User]()
     transaction {
       for(activeUser <- users.where(u => u.isActive === true))
-        activeUsers += (activeUser.ip->activeUser)
+        activeUsers += (activeUser.id->activeUser)
     }
     return activeUsers
   }

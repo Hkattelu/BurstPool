@@ -55,51 +55,42 @@ with JacksonJsonSupport with FutureSupport {
             val ip = request.getRemoteAddr()
             val accId = new BigInteger(params("accountId")).longValue()
             val nonce = new BigInteger(params("nonce")).longValue()
-
-            // Add user if we haven't seen this IP before
-            val userFuture = (Global.userManager ? addUser(ip, accId))
-              .mapTo[Option[User]]
-            Await.result(userFuture, timeout.duration) match {
-              case Some(user: User) => {
-                val recipientFuture = (Global.userManager ? 
-                  checkRewardRecipient(accId.toString)).mapTo[Boolean]
-                val isSet = Await.result(recipientFuture, timeout.duration)
-                if (isSet) {
-                  var deadline: BigInteger = 
-                    Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
-                  val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
-                    accId, nonce)).mapTo[BigInteger]
-                  deadline = Await.result(deadlineFuture, timeout.duration) 
-                  if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
-                    // Submit nonce to network to verify
-                    val submitFuture = (Global.deadlineSubmitter ? submitNonce(
-                      user, nonce, deadline)).mapTo[Result]
-                    Await.result(submitFuture, timeout.duration) match {
-                      case Result(Global.SUCCESS_MESSAGE) => {
-                        Global.userManager ! updateSubmitTime(ip)
-                        "Deadline submission success:" + deadline.toString
+            
+            // Check to see if this IP is banned
+            val bannedFuture = (Global.userManager ? ipIsBanned(ip))
+              .mapTo[Boolean]
+            bannedFuture onComplete {
+              case Success(true) => {
+                // Check to see if we have a user with this ID
+                val userFuture = (Global.userManager ? getUser(accId))
+                  .mapTo[Option[User]]
+                userFuture onComplete {
+                  case Success(Some(user: User)) => {
+                    validateAndSendSubmission(ip, accId, nonce, user)
+                  }
+                  case Success(None) => {
+                    // Create a new user if one didn't exist with the given ID
+                    val addUserFuture = (Global.userManager ? addUser(ip, accId)
+                      ).mapTo[Option[User]]
+                    addUserFuture onComplete {
+                      case Success(Some(user: User)) => {
+                        validateAndSendSubmission(ip, accId, nonce, user)
                       }
-                      case Result(message) => {
-                        response.setStatus(500)
-                        "Deadline submission failure: " + message
+                      case Success(None) => {
+                        "Something went wrong, could not create new user"
+                      }
+                      case Failure(e: Throwable) => {
+                        "Submit nonce error: " + e.toString
                       }
                     }
-                  } else {
-                    Global.userManager ! banUser(ip,
-                      LocalDateTime.now().plusMinutes(Config.BAN_TIME))
-                    Global.poolStatistics.incrementBadNonces()
-                    response.setStatus(500)
-                    "You submitted a bad deadline, and are temporarily banned" + 
-                    " for " + Config.BAN_TIME + " minutes."
                   }
-                } else {
-                  response.setStatus(500)
-                  "You cannot submit nonces unless you reward recipient is" +
-                  " set to " + Config.ACCOUNT_ID + ". This can take up to 5" +
-                  " blocks to update"
+                  case Failure(e: Throwable) => {
+                    "Submit nonce error: " + e.toString
+                  }
                 }
               }
-              case None => "You can't submit nonces either because"
+              case Success(false) => "You IP is banned, you can't submit nonces"
+              case Failure(e: Throwable) => "Submit nonce error: " + e.toString
             }
           } catch {
             case e: NoSuchElementException => {
@@ -118,4 +109,45 @@ with JacksonJsonSupport with FutureSupport {
       }
     }
   }
+
+  def validateAndSendSubmission(ip: String, accId: Long,
+    nonce: Long, user: User) {
+    val recipientFuture = (Global.userManager ? 
+      checkRewardRecipient(accId)).mapTo[Boolean]
+    val isSet = Await.result(recipientFuture, timeout.duration)
+    if (isSet) {
+      var deadline: BigInteger = 
+        Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
+      val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
+        accId, nonce)).mapTo[BigInteger]
+      deadline = Await.result(deadlineFuture, timeout.duration) 
+      if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
+        // Submit nonce to network to verify
+        val submitFuture = (Global.deadlineSubmitter ? submitNonce(
+          user, nonce, deadline)).mapTo[Result]
+        Await.result(submitFuture, timeout.duration) match {
+          case Result(Global.SUCCESS_MESSAGE) => {
+            Global.userManager ! updateSubmitTime(accId)
+            "Deadline submission success:" + deadline.toString
+          }
+          case Result(message) => {
+            response.setStatus(500)
+            "Deadline submission failure: " + message
+          }
+        }
+      } else {
+        Global.userManager ! banUser(ip,
+          LocalDateTime.now().plusMinutes(Config.BAN_TIME))
+        Global.poolStatistics.incrementBadNonces()
+        response.setStatus(500)
+        "You submitted a bad deadline, and are temporarily banned" + 
+        " for " + Config.BAN_TIME + " minutes."
+      }
+    } else {
+      response.setStatus(500)
+      "You cannot submit nonces unless you reward recipient is" +
+      " set to " + Config.ACCOUNT_ID + ". This can take up to 5" +
+      " blocks to update"
+    }
+  } 
 }

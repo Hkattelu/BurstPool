@@ -16,14 +16,15 @@ import java.time.LocalDateTime
 import java.sql.Timestamp
 
 case class resetUsers()
-case class containsUser(ip_address: String)
+case class ipIsBanned(ip_address: String)
+case class containsActiveUser(ip_address: String, accountId: Long)
 case class addUser(ip_address: String, accountId: Long)
-case class getUser(ip: String)
+case class getUser(accId: Long)
 case class getActiveUsers()
 case class banUser(ip_address: String, until: LocalDateTime)
 case class refreshUsers()
-case class updateSubmitTime(ip_address: String)
-case class checkRewardRecipient(accId: String)
+case class updateSubmitTime(accId: Long)
+case class checkRewardRecipient(accId: Long)
 case class RewardRecipient(rewardRecipient: String)
 
 class UserManager extends Actor with ActorLogging {
@@ -34,7 +35,7 @@ class UserManager extends Actor with ActorLogging {
 
   val http = Http(context.system)
   implicit val formats = DefaultFormats
-  var activeUsers: TrieMap[String, User] = TrieMap[String, User]()
+  var activeUsers: TrieMap[Long, User] = TrieMap[Long, User]()
   var bannedAddresses = TrieMap[String, LocalDateTime]()
   var netActiveTB = 0.0
 
@@ -48,9 +49,12 @@ class UserManager extends Actor with ActorLogging {
       bannedAddresses.clear()
       Global.poolStatistics.resetPoolStatistics()
     }
-    case containsUser(ip_address: String) => {
-      sender ! ((activeUsers contains ip_address) && 
-        !(bannedAddresses contains ip_address))
+    case ipIsBanned(ip_address: String) => {
+      sender ! (bannedAddresses contains ip_address)
+    }
+    case containsActiveUser(ip_address: String, accountId: Long) => {
+      sender ! (!(bannedAddresses contains ip_address) &&
+        (activeUsers contains accountId))
     }
     case addUser(ip_address: String, accountId: Long) => {
       // Add user with given IP and accountId if the IP wasn't banned
@@ -60,19 +64,37 @@ class UserManager extends Actor with ActorLogging {
         newUser.isActive = true
         newUser.ip = ip_address
         newUser.id = accountId
-        //newUser.reported_TB = 0.0
         newUser.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
         newUser.lastSubmitHeight = 
           new BigInteger(Global.miningInfo.height).longValue
-        activeUsers += (ip_address->newUser)
-        Global.poolStatistics.incrementActiveUsers()
+        //newUser.reported_TB = 0.0
+        activeUsers += (accountId->newUser)
         //Global.poolStatistics.addActiveTB(newUser.reported_TB)
+        Global.poolStatistics.incrementActiveUsers()
+        Global.poolDB.addUser(newUser)
         userToReturn = Some(newUser)
       }
       sender ! userToReturn
     }
-    case getUser(ip: String) => {
-      sender ! activeUsers.getOrElse(ip, null)
+    case getUser(accId: Long) => {
+      var user: User = activeUsers.getOrElse(accId, null)
+      if (user == null) {
+        user = Global.poolDB.getInactiveUser(accId)
+        if (user != null) {
+          activeUsers += (accId->user)
+          user.isActive = true
+          user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
+          user.lastSubmitHeight = 
+            new BigInteger(Global.miningInfo.height).longValue
+          Global.poolStatistics.incrementActiveUsers()
+          Global.poolDB.updateUsers(List[User](user))
+          sender ! Some(user)
+        } else {
+          sender ! None
+        }
+      } else {
+        sender ! Some(user)
+      }
     }
     case banUser(ip_address: String, until: LocalDateTime) => {
       bannedAddresses += (ip_address->until)
@@ -88,6 +110,12 @@ class UserManager extends Actor with ActorLogging {
       // Clear active users who haven't submitted a deadline in the specified
       // number of blocks
       prevNum = activeUsers.size
+      val inActiveUsers = activeUsers.filter((t) => {
+        t._2.lastSubmitHeight <= (
+          Global.miningInfo.height.toLong - Config.MIN_HEIGHT_DIFF)})
+      Global.poolDB.updateUsers(inActiveUsers.map{ case (k,v) => {
+        v.isActive = false; (k, v)}}.values.toList)
+
       activeUsers.retain((k,v) => {
         v.lastSubmitHeight > (
           Global.miningInfo.height.toLong - Config.MIN_HEIGHT_DIFF)})
@@ -101,19 +129,17 @@ class UserManager extends Actor with ActorLogging {
         }
       }
     }
-    case updateSubmitTime(ip_address: String) => {
+    case updateSubmitTime(accId: Long) => {
       // Update the last submit time of users who aren't banned
-      if (!(bannedAddresses contains ip_address)){
-        var userToUpdate = activeUsers(ip_address)
-        userToUpdate.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
-        activeUsers(ip_address) = userToUpdate
-        Global.poolStatistics.updateSubmitTime(userToUpdate.lastSubmitTime)
-      } 
+      var userToUpdate = activeUsers(accId)
+      userToUpdate.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
+      activeUsers(accId) = userToUpdate
+      Global.poolStatistics.updateSubmitTime(userToUpdate.lastSubmitTime)
     }
-    case checkRewardRecipient(accId: String) => {
+    case checkRewardRecipient(accId: Long) => {
       val s = sender
       val checkUrl = Config.NODE_ADDRESS + 
-        "/burst?requestType=getRewardRecipient&account="+accId
+        "/burst?requestType=getRewardRecipient&account="+accId.toString
       http.singleRequest(HttpRequest(uri = checkUrl)) onComplete {
         case Success(r: HttpResponse) => {
           r.entity.dataBytes.runFold(ByteString(""))(_ ++ _) foreach { body => 
