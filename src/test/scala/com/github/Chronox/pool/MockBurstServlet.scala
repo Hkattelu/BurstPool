@@ -71,7 +71,7 @@ with JacksonJsonSupport with FutureSupport {
           else if (recipient == "0") // Don't broadcast tx if recipient = 0
             TransactionResponse("1", false)
           else // Throw error if recipient is anything else
-            Global.ErrorMessage("3", "some error")
+            Global.ErrorMessage("3", "Mocked error from MockedBurstServlet")
         }
         // Return dummy info
         case "getMiningInfo" => "Getting mining info only takes GET requests"

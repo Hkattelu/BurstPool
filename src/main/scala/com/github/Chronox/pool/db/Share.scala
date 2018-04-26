@@ -10,6 +10,6 @@ class Share (
   var deadline: Option[Long] // Null deadline signifies a historic share
 ) extends KeyedEntity[CompositeKey2[Long, Long]] {
   def id = compositeKey(userId, blockId)
-  def this() = this(0, 0, 0, null)
+  def this() = this(0, 0, 0, None)
   def this(deadline: Long) = this(0, 0, 0, Some(deadline))
 }

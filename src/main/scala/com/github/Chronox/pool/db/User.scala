@@ -14,6 +14,6 @@ class User (
   var reported_TB: Option[BigDecimal],
   var miner_type: Option[String],
 ) extends KeyedEntity[Long] {
-  def this() = this(0, null, 0, null, false, null, 0L, 0L, null, null)
-  def this(id: Long) = this(id, null, 0, null, false, null, 0L, 0L, null, null)
+  def this() = this(0, null, 0, None, false, null, 0L, 0L, None, None)
+  def this(id: Long) = this(id, null, 0, None, false, null, 0L, 0L, None, None)
 }

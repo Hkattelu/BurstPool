@@ -13,5 +13,5 @@ class Block (
   var generationSig: String,
   var timeSubmitted: Option[Timestamp]
   ) extends KeyedEntity[Long] {
-  def this() = this(0, 0, null, 0, 0, 0, null, "", null)
+  def this() = this(0, 0, None, 0, 0, 0, None, null, None)
 }

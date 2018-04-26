@@ -60,7 +60,7 @@ class UserManager extends Actor with ActorLogging {
       // Add user with given IP and accountId if the IP wasn't banned
       var userToReturn: Option[User] = Option(null)
       if (!(bannedAddresses contains ip_address)){
-        var newUser = new User
+        var newUser = new User()
         newUser.isActive = true
         newUser.ip = ip_address
         newUser.id = accountId
