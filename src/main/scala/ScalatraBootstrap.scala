@@ -31,7 +31,9 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
       system.actorOf(Props(new StateUpdater(false)), name="StateUpdater")
     context.mount(new PoolServlet(), "/*")
     context.mount(new BurstPriceServlet(), "/getBurstPrice")
-    context.mount(new BurstServlet(system), "/burst")
+    context.mount(
+      new BurstServlet(system, system.actorOf(Props[SubmissionHandler],
+      name="SubmissionHandler")), "/burst")
   }
 
   override def destroy(context: ServletContext) {

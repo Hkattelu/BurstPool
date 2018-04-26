@@ -1,7 +1,5 @@
 package com.github.Chronox.pool.servlets
-
-import com.github.Chronox.pool.Global
-import com.github.Chronox.pool.Config
+import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.actors._
 import com.github.Chronox.pool.db.User
 
@@ -20,13 +18,14 @@ import org.scalatra.json._
 import java.lang.Long
 import java.math.BigInteger
 
-class BurstServlet(system: ActorSystem) extends ScalatraServlet
-with JacksonJsonSupport with FutureSupport {
+class BurstServlet(system: ActorSystem, submissionHandler: ActorRef) 
+extends ScalatraServlet with JacksonJsonSupport with FutureSupport {
 
   protected implicit def executor: ExecutionContext = system.dispatcher
   protected implicit lazy val jsonFormats: Formats =
    DefaultFormats.withBigDecimal
-  protected implicit val timeout: Timeout = 5 seconds
+  protected implicit val timeout: Timeout = new Timeout(5 seconds)
+  protected val duration = 5 seconds
 
   before() {
     contentType = formats("json")
@@ -38,11 +37,15 @@ with JacksonJsonSupport with FutureSupport {
         case "submitNonce" => "Submitting nonces only takes POST requests"
         case "getMiningInfo" => Global.miningInfo
         case "sendMoney" => "Money cannot be sent through this pool"
+        case _ => {
+          response.setStatus(400)
+          "Invalid request type"
+        }
       }
     } catch {
       case e: NoSuchElementException => {
         response.setStatus(400)
-        "Invalid request type"
+        "No request type given"
       }
     }
   }
@@ -56,41 +59,9 @@ with JacksonJsonSupport with FutureSupport {
             val accId = new BigInteger(params("accountId")).longValue()
             val nonce = new BigInteger(params("nonce")).longValue()
             
-            // Check to see if this IP is banned
-            val bannedFuture = (Global.userManager ? ipIsBanned(ip))
-              .mapTo[Boolean]
-            bannedFuture onComplete {
-              case Success(true) => {
-                // Check to see if we have a user with this ID
-                val userFuture = (Global.userManager ? getUser(accId))
-                  .mapTo[Option[User]]
-                userFuture onComplete {
-                  case Success(Some(user: User)) => {
-                    validateAndSendSubmission(ip, accId, nonce, user)
-                  }
-                  case Success(None) => {
-                    // Create a new user if one didn't exist with the given ID
-                    val addUserFuture = (Global.userManager ? addUser(ip, accId)
-                      ).mapTo[Option[User]]
-                    addUserFuture onComplete {
-                      case Success(Some(user: User)) => {
-                        validateAndSendSubmission(ip, accId, nonce, user)
-                      }
-                      case Success(None) => {
-                        "Something went wrong, could not create new user"
-                      }
-                      case Failure(e: Throwable) => {
-                        "Submit nonce error: " + e.toString
-                      }
-                    }
-                  }
-                  case Failure(e: Throwable) => {
-                    "Submit nonce error: " + e.toString
-                  }
-                }
-              }
-              case Success(false) => "You IP is banned, you can't submit nonces"
-              case Failure(e: Throwable) => "Submit nonce error: " + e.toString
+            new AsyncResult() {    
+              val is = (submissionHandler ? requestSubmission(
+                ip, accId, nonce, response))(5 seconds)
             }
           } catch {
             case e: NoSuchElementException => {
@@ -101,70 +72,16 @@ with JacksonJsonSupport with FutureSupport {
         }
         case "getMiningInfo" => "Getting mining info only takes GET requests"
         case "sendMoney" => "Money cannot be sent through this pool"
+        case _ => {
+          response.setStatus(400)
+          "Invalid request type"
+        }
       }
     } catch {
       case e: NoSuchElementException => {
         response.setStatus(400)
-        "Invalid request type"
+        "No request type given"
       }
     }
   }
-
-  def validateAndSendSubmission(ip: String, accId: Long,
-    nonce: Long, user: User) {
-    val recipientFuture = (Global.userManager ? 
-      checkRewardRecipient(accId)).mapTo[Boolean]
-    recipientFuture onComplete {
-      case Success(true) => {
-        var deadline: BigInteger = 
-          Config.TARGET_DEADLINE.add(BigInteger.valueOf(1L))
-        val deadlineFuture = (Global.deadlineChecker ? nonceToDeadline(
-          accId, nonce)).mapTo[BigInteger]
-        deadlineFuture onComplete {
-          case Success(deadline: BigInteger) => {
-            if(deadline.compareTo(Config.TARGET_DEADLINE) <= 0) {
-              // Submit nonce to network to verify
-              val submitFuture = (Global.deadlineSubmitter ? submitNonce(
-                user, nonce, deadline)).mapTo[Result]
-              submitFuture onComplete {
-                case Success(Result(Global.SUCCESS_MESSAGE)) => {
-                  Global.userManager ! updateSubmitTime(accId)
-                  "Deadline submission success: " + deadline.toString
-                }
-                case Success(Result(message)) => {
-                  response.setStatus(500)
-                  "Deadline submission failure: " + message
-                }
-                case Failure(e: Throwable) => {
-                  response.setStatus(500)
-                  "Failure while submitting deadline: " + e.toString
-                }
-              }
-            } else {
-              Global.userManager ! banUser(ip,
-                LocalDateTime.now().plusMinutes(Config.BAN_TIME))
-              Global.poolStatistics.incrementBadNonces()
-              response.setStatus(500)
-              "You submitted a bad deadline, and are temporarily banned" + 
-              " for " + Config.BAN_TIME + " minutes."
-            }
-          }
-          case Failure(e: Throwable) => {
-            response.setStatus(500)
-            "Failure on deadline calculation: " + e.toString
-          }
-        }
-      }
-      case Success(false) => {
-        response.setStatus(500)
-        "You cannot submit nonces unless you reward recipient is" +
-        " set to " + Config.ACCOUNT_ID + ". This can take up to 5" +
-        " blocks to update"
-      }
-      case Failure(e: Throwable) => {
-        response.setStatus(500)
-        "Failure while getting reward recipient: " + e.toString
-      }
-    }
-  } 
 }

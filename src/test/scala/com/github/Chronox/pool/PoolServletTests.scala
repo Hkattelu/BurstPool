@@ -69,7 +69,8 @@ with DatabaseInit {
     addServlet(classOf[PoolServlet], "/*")
     addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
     addServlet(new MockBurstServlet(system), "/test")
-    addServlet(new BurstServlet(system), "/burst")
+    addServlet(new BurstServlet(system, system.actorOf(Props[SubmissionHandler],
+      name="SubmissionHandler")), "/burst")
 
     Global.miningInfo = new Global.MiningInfo(
       "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
@@ -104,6 +105,18 @@ with DatabaseInit {
       body should include ("generationSignature")
       body should include ("baseTarget")
       body should include ("height")
+    }
+  }
+
+  test("Fail if submitting nonce without all parameters"){
+    post("/burst", Map("requestType" -> "submitNonce")){
+      status should equal(400)
+    }
+  }
+
+  test("Fails on bad requestType"){
+    post("/burst", Map("requestType" -> "somethingThatWontWork")){
+      status should equal(400)
     }
   }
 
