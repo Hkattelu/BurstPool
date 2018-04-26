@@ -71,7 +71,8 @@ class UserManager extends Actor with ActorLogging {
         activeUsers += (accountId->newUser)
         //Global.poolStatistics.addActiveTB(newUser.reported_TB)
         Global.poolStatistics.incrementActiveUsers()
-        Global.poolDB.addUser(newUser)
+        Global.DBWriter ! writeFunction(
+          () => Global.poolDB.addUser(newUser))
         userToReturn = Some(newUser)
       }
       sender ! userToReturn
@@ -87,7 +88,8 @@ class UserManager extends Actor with ActorLogging {
           user.lastSubmitHeight = 
             new BigInteger(Global.miningInfo.height).longValue
           Global.poolStatistics.incrementActiveUsers()
-          Global.poolDB.updateUsers(List[User](user))
+          Global.DBWriter ! writeFunction(
+            () => Global.poolDB.updateUsers(List[User](user)))
           sender ! Some(user)
         } else {
           sender ! None
@@ -113,8 +115,9 @@ class UserManager extends Actor with ActorLogging {
       val inActiveUsers = activeUsers.filter((t) => {
         t._2.lastSubmitHeight <= (
           Global.miningInfo.height.toLong - Config.MIN_HEIGHT_DIFF)})
-      Global.poolDB.updateUsers(inActiveUsers.map{ case (k,v) => {
-        v.isActive = false; (k, v)}}.values.toList)
+      Global.DBWriter ! writeFunction(
+        () => Global.poolDB.updateUsers(inActiveUsers.map{ case (k,v) => {
+        v.isActive = false; (k, v)}}.values.toList))
 
       activeUsers.retain((k,v) => {
         v.lastSubmitHeight > (

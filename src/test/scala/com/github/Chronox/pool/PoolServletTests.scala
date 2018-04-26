@@ -53,6 +53,8 @@ with DatabaseInit {
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
     Global.stateUpdater = 
       system.actorOf(Props(new StateUpdater(true)), name="StateUpdater")
+    Global.DBWriter = 
+      system.actorOf(Props[DatabaseWriter], name = "DatabaseWriter")
 
     server.getConnectors.headOption match {
       case Some(conn) =>

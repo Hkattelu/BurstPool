@@ -128,7 +128,8 @@ class RewardPayout extends Actor with ActorLogging {
                   if(tx.broadcast){
                     log.info("Tx " + tx.transaction + " broadcasted!")
                     for(reward <- sentRewards.toList) reward.isPaid = true
-                    Global.poolDB.markRewardsAsPaid(sentRewards.toList)
+                    Global.DBWriter ! writeFunction(
+                      () => Global.poolDB.markRewardsAsPaid(sentRewards.toList))
                     unpaidRewards = unpaidRewards.map{ 
                       case(k,v) => (k, v.filter(!_.isPaid))}
                     unpaidRewards.retain((k,v) => !v.isEmpty)      
@@ -164,7 +165,8 @@ class RewardPayout extends Actor with ActorLogging {
       } 
       val rewardList = rewards.values.toList
       unpaidRewards += (blockId->rewardList)
-      Global.poolDB.addRewardList(rewardList)
+      Global.DBWriter ! writeFunction(
+        () => Global.poolDB.addRewardList(rewardList))
     }
     case getRewards() => sender ! unpaidRewards.toMap
     case clearRewards() => unpaidRewards = TrieMap[Long, List[Reward]]()

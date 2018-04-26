@@ -1,7 +1,6 @@
 package com.github.Chronox.pool.actors
-import com.github.Chronox.pool.Global
-import com.github.Chronox.pool.Config
-import com.github.Chronox.pool.db.{User, Reward, Share}
+import com.github.Chronox.pool.{ Global, Config }
+import com.github.Chronox.pool.db.{ User, Reward, Share }
 
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.model._
@@ -40,7 +39,8 @@ class ShareManager extends Actor with ActorLogging {
     }
     case dumpCurrentShares() => {
       historicShareQueue.enqueue(currentShares clone)
-      Global.poolDB.addShareList(currentShares.values.toList)
+      Global.DBWriter ! writeFunction(
+        () => Global.poolDB.addShareList(currentShares.values.toList))
       currentShares.clear()
     }
     case queueCurrentShares(blockId: Long) => {
