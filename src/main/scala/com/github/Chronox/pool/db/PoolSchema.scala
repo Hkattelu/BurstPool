@@ -23,7 +23,7 @@ object PoolSchema extends Schema {
     u.lastSubmitHeight is (indexed),
     columns(u.id, u.nickName) are (unique)))
   on(blocks)(b => declare(
-    b.generator is (indexed),
+    b.generatorId is (indexed),
     b.height is (unique, indexed)))
   on(rewards)(r => declare(columns(r.userId, r.blockId) are (indexed)))
   on(shares)(s => declare(columns(s.blockId, s.userId) are (indexed)))
@@ -148,5 +148,9 @@ object PoolSchema extends Schema {
 
   def markRewardsAsPaid(rewardList: List[Reward]) =  {
     transaction{rewards.update(rewardList)}
+  }
+
+  def addBlock(block: Block) = {
+    transaction{blocks.insert(block)}
   }
 }

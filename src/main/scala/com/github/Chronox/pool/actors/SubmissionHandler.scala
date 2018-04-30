@@ -53,13 +53,13 @@ class SubmissionHandler extends Actor with ActorLogging {
                 }
                 case Failure(e: Throwable) => {
                   response.setStatus(500)
-                  s ! ("Submit nonce error: " + e.toString)
+                  s ! ("Failure while adding user: " + e.toString)
                 }
               }
             }
             case Failure(e: Throwable) => {
               response.setStatus(500)
-              s ! ("Submit nonce error: " + e.toString)
+              s ! ("Failure while getting user: " + e.toString)
             }
           }
         }

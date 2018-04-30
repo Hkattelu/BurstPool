@@ -17,23 +17,22 @@ object Global {
   var shareManager: ActorRef = null
   var rewardPayout: ActorRef = null
   var DBWriter: ActorRef = null
+
   val poolStatistics = PoolStatistics
   val poolDB = PoolSchema
-
-  var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE
-  var miningInfo: MiningInfo = MiningInfo(null, null, null)
-  var lastBlockInfo: LastBlockInfo = LastBlockInfo(null, null, null, null, 
-    null, null, null, null)
-  var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 
   case class MiningInfo(generationSignature:String, baseTarget: String, 
     height: String)
   case class LastBlockInfo(generationSignature:String, block: String,
-    baseTarget: String, height: String, blockReward: String,
-    generator: String, generatorRS: String,
-    numberOfTransactions: String)
+    nonce: String, baseTarget: String, height: String, blockReward: String,
+    generator: String, generatorRS: String, timestamp: String)
   case class ErrorMessage(errorCode: String, errorDescription: String)
   case class setSubmitURI(uri: String)
 
   val SUCCESS_MESSAGE = "success"
+  var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE
+  var miningInfo: MiningInfo = MiningInfo(null, null, null)
+  var lastBlockInfo: LastBlockInfo = LastBlockInfo(null, null, null, null, 
+    null, null, null, null, null)
+  var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 }
