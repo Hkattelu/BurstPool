@@ -54,6 +54,8 @@ class RewardPayout extends Actor with ActorLogging {
       var responseFutureList = new ListBuffer[Future[HttpResponse]]()
       val parseFutureList = new ListBuffer[Future[akka.util.ByteString]]()
 
+
+
       // Send out requests for block reward information
       for((blockId, rewards) <- unpaidRewards) {
         val future = http.singleRequest(HttpRequest(
@@ -128,7 +130,7 @@ class RewardPayout extends Actor with ActorLogging {
                   if(tx.broadcast){
                     log.info("Tx " + tx.transaction + " broadcasted!")
                     for(reward <- sentRewards.toList) reward.isPaid = true
-                    Global.DBWriter ! writeFunction(
+                    Global.dbWriter ! writeFunction(
                       () => Global.poolDB.markRewardsAsPaid(sentRewards.toList))
                     unpaidRewards = unpaidRewards.map{ 
                       case(k,v) => (k, v.filter(!_.isPaid))}
@@ -165,7 +167,7 @@ class RewardPayout extends Actor with ActorLogging {
       } 
       val rewardList = rewards.values.toList
       unpaidRewards += (blockId->rewardList)
-      Global.DBWriter ! writeFunction(
+      Global.dbWriter ! writeFunction(
         () => Global.poolDB.addRewardList(rewardList))
     }
     case getRewards() => sender ! unpaidRewards.toMap

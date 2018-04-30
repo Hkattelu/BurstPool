@@ -14,6 +14,8 @@ class Reward (
   def this() = this(0, 0, BigDecimal.valueOf(0), 
     BigDecimal.valueOf(0), false)
   def canEqual(a: Any) = a.isInstanceOf[Reward]
+
+  // Override equals and hashcode for easy equality checking for Rewards
   override def equals(that: Any): Boolean =
     that match {
       case that: Reward => that.canEqual(this) && this.hashCode == that.hashCode

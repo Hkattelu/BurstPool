@@ -39,7 +39,7 @@ class ShareManager extends Actor with ActorLogging {
     }
     case dumpCurrentShares() => {
       historicShareQueue.enqueue(currentShares clone)
-      Global.DBWriter ! writeFunction(
+      Global.dbWriter ! writeFunction(
         () => Global.poolDB.addShareList(currentShares.values.toList))
       currentShares.clear()
     }

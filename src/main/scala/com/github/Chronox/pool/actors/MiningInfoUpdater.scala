@@ -68,7 +68,7 @@ class MiningInfoUpdater extends Actor with ActorLogging {
 
                 // Log block to database
                 var block = parseBlock(Global.lastBlockInfo)
-                Global.DBWriter ! writeFunction(
+                Global.dbWriter ! writeFunction(
                   () => Global.poolDB.addBlock(block))
               }
             } 

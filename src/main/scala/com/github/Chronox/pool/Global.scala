@@ -16,7 +16,8 @@ object Global {
   var userManager: ActorRef = null
   var shareManager: ActorRef = null
   var rewardPayout: ActorRef = null
-  var DBWriter: ActorRef = null
+  var dbWriter: ActorRef = null
+  var dbReader: ActorRef = null
 
   val poolStatistics = PoolStatistics
   val poolDB = PoolSchema

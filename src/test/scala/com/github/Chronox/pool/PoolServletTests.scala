@@ -53,8 +53,10 @@ with DatabaseInit {
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
     Global.stateUpdater = 
       system.actorOf(Props(new StateUpdater(true)), name="StateUpdater")
-    Global.DBWriter = 
+    Global.dbWriter = 
       system.actorOf(Props[DatabaseWriter], name = "DatabaseWriter")
+    Global.dbReader =
+      system.actorOf(Props[DatabaseReader], name = "DatabaseReader")
 
     server.getConnectors.headOption match {
       case Some(conn) =>
@@ -190,7 +192,7 @@ with DatabaseInit {
     // Adding 5 users should set activeUsers to 5
     Global.poolStatistics.numActiveUsers.get() should equal (0)
     Global.poolStatistics.numTotalUsers.get() should equal (0)
-    for(i <- 1 to 5) Global.userManager ? addUser(i.toString(), i.toLong, None)
+    for(i <- 1 to 5) Global.userManager ? addUser(i.toString(), i.toLong)
     Thread.sleep(50)
     Global.poolStatistics.numTotalUsers.get() should equal (5)
     Global.poolStatistics.numActiveUsers.get() should equal (5)
@@ -230,7 +232,7 @@ with DatabaseInit {
     // Unbanning a banned user, and then checking if they exist should work
     Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
     Global.userManager ! refreshUsers()
-    Global.userManager ? addUser("1", 2, None)
+    Global.userManager ? addUser("1", 2)
 
     val future = (Global.userManager ? containsActiveUser("1", 2))
       .mapTo[Boolean]

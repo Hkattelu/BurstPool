@@ -153,4 +153,10 @@ object PoolSchema extends Schema {
   def addBlock(block: Block) = {
     transaction{blocks.insert(block)}
   }
+
+  def getBlock(id: Long): Block = {
+    var block: Block  = null
+    transaction{block = blocks.lookup(id).getOrElse(null)}
+    return block
+  }
 }
