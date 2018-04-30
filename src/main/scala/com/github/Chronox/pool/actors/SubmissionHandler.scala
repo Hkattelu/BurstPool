@@ -14,7 +14,7 @@ import java.math.BigInteger
 import java.time.LocalDateTime
 
 case class requestSubmission(ip: String, accId: Long, nonce: Long, 
-  response: HttpServletResponse)
+  miner_type: Option[String], response: HttpServletResponse)
 case class validateAndSendSubmission(ip: String, accId: Long,
   nonce: Long, user: User, response: HttpServletResponse)
 class SubmissionHandler extends Actor with ActorLogging {
@@ -26,7 +26,7 @@ class SubmissionHandler extends Actor with ActorLogging {
 
   def receive() = {
     case requestSubmission(ip: String, accId: Long, nonce: Long, 
-      response: HttpServletResponse) => {
+      miner_type: Option[String], response: HttpServletResponse) => {
       val s = sender
       // Check to see if this IP is banned
       val bannedFuture = (Global.userManager ? ipIsBanned(ip)).mapTo[Boolean]
@@ -41,8 +41,8 @@ class SubmissionHandler extends Actor with ActorLogging {
                 ip, accId, nonce, user, response))
             case Success(None) => {
               // Create a new user if one didn't exist with the given ID
-              val addUserFuture = (Global.userManager ? addUser(ip, accId))
-                .mapTo[Option[User]]
+              val addUserFuture = (Global.userManager ? addUser(
+                ip, accId, miner_type)).mapTo[Option[User]]
               addUserFuture onComplete {
                 case Success(Some(user: User)) =>
                   s ! (self ? validateAndSendSubmission(

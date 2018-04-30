@@ -7,14 +7,13 @@ import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.pattern.ask
 import akka.util.Timeout
 import org.scalatra.{Accepted, FutureSupport, ScalatraServlet}
-import scala.util.{ Failure, Success }
 import scala.concurrent.{Future, ExecutionContext, Await}
 import scala.concurrent.duration._
 
 import org.scalatra._
-import java.time.LocalDateTime
 import org.json4s.{DefaultFormats, Formats}
-import org.scalatra.json._ 
+import org.scalatra.json._
+import javax.servlet.http.HttpServletRequest
 import java.lang.Long
 import java.math.BigInteger
 
@@ -58,10 +57,11 @@ extends ScalatraServlet with JacksonJsonSupport with FutureSupport {
             val ip = request.getRemoteAddr()
             val accId = new BigInteger(params("accountId")).longValue()
             val nonce = new BigInteger(params("nonce")).longValue()
-            
+            var miner_type: Option[String] = getMinerType(request)
+
             new AsyncResult() {    
               val is = (submissionHandler ? requestSubmission(
-                ip, accId, nonce, response))(5 seconds)
+                ip, accId, nonce, miner_type, response))(5 seconds)
             }
           } catch {
             case e: NoSuchElementException => {
@@ -83,5 +83,24 @@ extends ScalatraServlet with JacksonJsonSupport with FutureSupport {
         "No request type given"
       }
     }
+  }
+
+  def getMinerType(implicit request: HttpServletRequest) : Option[String] = {
+    var miner_type: Option[String] = None
+    if (params contains "X-Miner")
+      miner_type = Some(params("X-Miner"))
+    else if (params contains "miner")
+      miner_type = Some(params("miner"))
+    else if (params contains "secretPhrase"){
+      if (params("secretPhrase") == "cryptoport")
+        miner_type = Some("uray")
+      else if (params("secretPhrase") == "HereGoesTheSecret")
+        miner_type = Some("java")
+      else if (params("secretPhrase") == "pool-mining")
+        miner_type = Some("poolmining")
+    }
+    else if (params contains "deadline")
+      miner_type = Some("Blago")
+    return miner_type
   }
 }

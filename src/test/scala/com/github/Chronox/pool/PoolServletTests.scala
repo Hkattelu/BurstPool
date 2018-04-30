@@ -190,7 +190,7 @@ with DatabaseInit {
     // Adding 5 users should set activeUsers to 5
     Global.poolStatistics.numActiveUsers.get() should equal (0)
     Global.poolStatistics.numTotalUsers.get() should equal (0)
-    for(i <- 1 to 5) Global.userManager ? addUser(i.toString(), i.toLong)
+    for(i <- 1 to 5) Global.userManager ? addUser(i.toString(), i.toLong, None)
     Thread.sleep(50)
     Global.poolStatistics.numTotalUsers.get() should equal (5)
     Global.poolStatistics.numActiveUsers.get() should equal (5)
@@ -230,7 +230,7 @@ with DatabaseInit {
     // Unbanning a banned user, and then checking if they exist should work
     Global.userManager ! banUser("1", LocalDateTime.now().minusSeconds(1))
     Global.userManager ! refreshUsers()
-    Global.userManager ? addUser("1", 2)
+    Global.userManager ? addUser("1", 2, None)
 
     val future = (Global.userManager ? containsActiveUser("1", 2))
       .mapTo[Boolean]

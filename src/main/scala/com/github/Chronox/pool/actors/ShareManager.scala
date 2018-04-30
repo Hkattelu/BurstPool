@@ -70,10 +70,7 @@ class ShareManager extends Actor with ActorLogging {
   object historicShareQueue {
     var queue: ConcurrentLinkedQueue[TrieMap[Long, Share]] = 
       new ConcurrentLinkedQueue[TrieMap[Long, Share]]()
-
-    def init(q: ConcurrentLinkedQueue[TrieMap[Long, Share]]) {
-      queue = q
-    }
+    def init(q: ConcurrentLinkedQueue[TrieMap[Long, Share]]) { queue = q }
 
     def enqueue(map: TrieMap[Long, Share]) {
       queue.add(map)

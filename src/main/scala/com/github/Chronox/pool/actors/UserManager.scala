@@ -18,7 +18,6 @@ import java.sql.Timestamp
 case class resetUsers()
 case class ipIsBanned(ip_address: String)
 case class containsActiveUser(ip_address: String, accountId: Long)
-case class addUser(ip_address: String, accountId: Long)
 case class getUser(accId: Long)
 case class getActiveUsers()
 case class banUser(ip_address: String, until: LocalDateTime)
@@ -26,6 +25,17 @@ case class refreshUsers()
 case class updateSubmitTime(accId: Long)
 case class checkRewardRecipient(accId: Long)
 case class RewardRecipient(rewardRecipient: String)
+
+// Overload constructors for addUser to make miner_type optional
+case class addUser(
+  ip_address: String, accountId: Long, miner_type: Option[String]) {
+  def this(ip_address: String, accountId: Long) = 
+    this(ip_address, accountId, None)
+}
+object addUser {
+  def apply(ip_address: String, accountId: Long) = 
+    new addUser(ip_address, accountId, None)
+}
 
 class UserManager extends Actor with ActorLogging {
 
@@ -56,7 +66,8 @@ class UserManager extends Actor with ActorLogging {
       sender ! (!(bannedAddresses contains ip_address) &&
         (activeUsers contains accountId))
     }
-    case addUser(ip_address: String, accountId: Long) => {
+    case addUser(ip_address: String, accountId: Long, 
+      miner_type: Option[String]) => {
       // Add user with given IP and accountId if the IP wasn't banned
       var userToReturn: Option[User] = Option(null)
       if (!(bannedAddresses contains ip_address)){
@@ -67,6 +78,7 @@ class UserManager extends Actor with ActorLogging {
         newUser.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
         newUser.lastSubmitHeight = 
           new BigInteger(Global.miningInfo.height).longValue
+        newUser.miner_type = miner_type
         //newUser.reported_TB = 0.0
         activeUsers += (accountId->newUser)
         //Global.poolStatistics.addActiveTB(newUser.reported_TB)
