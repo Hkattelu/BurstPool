@@ -90,24 +90,31 @@ class UserManager extends Actor with ActorLogging {
       sender ! userToReturn
     }
     case getUser(accId: Long) => {
+      val s = sender
       var user: User = activeUsers.getOrElse(accId, null)
       if (user == null) {
-        user = Global.poolDB.getInactiveUser(accId)
-        if (user != null) {
-          activeUsers += (accId->user)
-          user.isActive = true
-          user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
-          user.lastSubmitHeight = 
-            new BigInteger(Global.miningInfo.height).longValue
-          Global.poolStatistics.incrementActiveUsers()
-          Global.dbWriter ! writeFunction(
-            () => Global.poolDB.updateUsers(List[User](user)))
-          sender ! Some(user)
-        } else {
-          sender ! None
+        userFuture = (Global.dbReader ! readFunction(
+          () =>Global.poolDB.getInactiveUser(accId)).mapTo[User]
+        userFuture onComplete {
+          case Success(user: User) => {
+            activeUsers += (accId->user)
+            user.isActive = true
+            user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
+            user.lastSubmitHeight = 
+              new BigInteger(Global.miningInfo.height).longValue
+            Global.poolStatistics.incrementActiveUsers()
+            Global.dbWriter ! writeFunction(
+              () => Global.poolDB.updateUsers(List[User](user)))
+            s ! Some(user)
+          }
+          case Success(null) => s ! None
+          case Failure(error) => {
+            log.error("Failed to get inactive User from DB")
+            s ! None
+          }
         }
       } else {
-        sender ! Some(user)
+        s ! Some(user)
       }
     }
     case banUser(ip_address: String, until: LocalDateTime) => {
