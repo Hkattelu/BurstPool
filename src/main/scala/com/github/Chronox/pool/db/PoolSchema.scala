@@ -70,15 +70,16 @@ object PoolSchema extends Schema {
     return true
   }
 
-  def getInactiveUser(accId: Long): User = {
-    var user: User = null
+  def getInactiveUser(accId: Long): Option[User] = {
+    var user: Option[User] = None
     try {
       transaction {
-        user = users.where(u => u.id === accId and u.isActive === false).single
+        user = Some(users.where(
+          u => u.id === accId and u.isActive === false).single)
       }
     } catch {case e: Throwable => {
-        println("Get User error: " + e.toString)
-        return null
+        println("Get Inactive User error: " + e.toString)
+        return None
       }
     }
     return user
@@ -86,7 +87,7 @@ object PoolSchema extends Schema {
 
   def updateUsers(toUpdateUsers: List[User]) = {
     try { transaction { users.update(toUpdateUsers) } } 
-    catch {case e: Throwable => { println("Get User error: " + e.toString) }}
+    catch {case e: Throwable => { println("Update User error: " + e.toString) }}
   }
 
   def loadActiveUsers(): TrieMap[Long, User] = {
@@ -154,9 +155,9 @@ object PoolSchema extends Schema {
     transaction{blocks.insert(block)}
   }
 
-  def getBlock(id: Long): Block = {
-    var block: Block  = null
-    transaction{block = blocks.lookup(id).getOrElse(null)}
+  def getBlock(id: Long): Option[Block] = {
+    var block: Option[Block]  = None
+    transaction{block = blocks.lookup(id)}
     return block
   }
 }

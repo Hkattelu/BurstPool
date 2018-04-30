@@ -49,6 +49,8 @@ with DatabaseInit {
       system.actorOf(Props[UserManager], name = "UserManager")
     Global.shareManager = 
       system.actorOf(Props[ShareManager], name = "ShareManager")
+    Global.rewardAccumulator = 
+      system.actorOf(Props[RewardAccumulator], name = "RewardAccumulator")
     Global.rewardPayout = 
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
     Global.stateUpdater = 
@@ -172,8 +174,8 @@ with DatabaseInit {
     var historic = Map[Long, BigDecimal]()
     for(i <- 1 to 4) historic += (i.toLong->quarter)
     current += (5.toLong->one)
-    Global.rewardPayout ! addRewards(3, current, historic)
-    val future = (Global.rewardPayout ? getRewards())
+    Global.rewardAccumulator ! addRewards(3, current, historic)
+    val future = (Global.rewardAccumulator ? getUnpaidRewards())
       .mapTo[Map[Long, List[Reward]]]
     val calculated = Await.result(future, timeout.duration)
     var rewards = Map[Long, List[Reward]]()
@@ -183,7 +185,7 @@ with DatabaseInit {
     rewardList += (new Reward(5, 3, one, zero, false))
     rewards += (3L->rewardList.toList)
     calculated.values.head.toSet should equal (rewards.values.head.toSet)
-    Global.rewardPayout ! clearRewards()
+    Global.rewardAccumulator ! clearUnpaidRewards()
   }
 
   test("Adding Users pool statistics"){
@@ -247,11 +249,11 @@ with DatabaseInit {
     var historic = Map[Long, BigDecimal]()
     for(i <- 2 to 5) historic += (i.toLong->quarter)
     current += (0.toLong->one)
-    Global.rewardPayout ! addRewards(1, current, historic) //2 causes net error
+    Global.rewardAccumulator ! addRewards(1, current, historic)// 2 causes error
     Thread.sleep(100)
     Global.rewardPayout ! PayoutRewards()
     Thread.sleep(1000)
-    val future = (Global.rewardPayout ? getRewards())
+    val future = (Global.rewardAccumulator ? getUnpaidRewards())
       .mapTo[Map[Long, List[Reward]]]
     val calculated = Await.result(future, timeout.duration)
     var rewards = Map[Long, List[Reward]]()
@@ -262,7 +264,7 @@ with DatabaseInit {
     rewards += (1L->rewardList.toList)
     calculated.values.head.toSet should equal (rewards.values.head.toSet)
 
-    Global.rewardPayout ! clearRewards()
+    Global.rewardAccumulator ! clearUnpaidRewards()
   }
 
   test("Reward Transactions are successfully sent"){
@@ -271,11 +273,11 @@ with DatabaseInit {
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->one)
-    Global.rewardPayout ! addRewards(2, current, historic)
+    Global.rewardAccumulator ! addRewards(2, current, historic)
     Thread.sleep(100)
     Global.rewardPayout ! PayoutRewards()
     Thread.sleep(1000)
-    val future = (Global.rewardPayout ? getRewards())
+    val future = (Global.rewardAccumulator ? getUnpaidRewards())
       .mapTo[Map[Long, List[Reward]]]
     val calculated = Await.result(future, timeout.duration)
     calculated should equal (Map[Long, List[Reward]]())

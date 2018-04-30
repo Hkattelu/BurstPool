@@ -5,7 +5,8 @@ import com.github.Chronox.pool.db.User
 import akka.actor.{ Actor, ActorLogging }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
-import akka.util.ByteString
+import akka.util.{ Timeout, ByteString }
+import akka.pattern.ask
 import akka.stream.{ ActorMaterializer, ActorMaterializerSettings }
 import scala.util.{ Failure, Success }
 import scala.concurrent.duration._
@@ -42,6 +43,7 @@ class UserManager extends Actor with ActorLogging {
   import context.dispatcher
   final implicit val materializer: ActorMaterializer = 
     ActorMaterializer(ActorMaterializerSettings(context.system))
+  final implicit val timeout: Timeout = 5 seconds
 
   val http = Http(context.system)
   implicit val formats = DefaultFormats
@@ -93,10 +95,10 @@ class UserManager extends Actor with ActorLogging {
       val s = sender
       var user: User = activeUsers.getOrElse(accId, null)
       if (user == null) {
-        userFuture = (Global.dbReader ! readFunction(
-          () =>Global.poolDB.getInactiveUser(accId)).mapTo[User]
+        val userFuture = (Global.dbReader ? readFunction(
+          () =>Global.poolDB.getInactiveUser(accId))).mapTo[Option[User]]
         userFuture onComplete {
-          case Success(user: User) => {
+          case Success(Some(user: User)) => {
             activeUsers += (accId->user)
             user.isActive = true
             user.lastSubmitTime = Timestamp.valueOf(LocalDateTime.now())
@@ -107,7 +109,7 @@ class UserManager extends Actor with ActorLogging {
               () => Global.poolDB.updateUsers(List[User](user)))
             s ! Some(user)
           }
-          case Success(null) => s ! None
+          case Success(None) => s ! None
           case Failure(error) => {
             log.error("Failed to get inactive User from DB")
             s ! None

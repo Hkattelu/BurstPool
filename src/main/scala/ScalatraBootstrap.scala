@@ -25,6 +25,8 @@ class ScalatraBootstrap extends LifeCycle with DatabaseInit {
       system.actorOf(Props[UserManager], name = "UserManager")
     Global.shareManager = 
       system.actorOf(Props[ShareManager], name = "ShareManager")
+    Global.rewardAccumulator = 
+      system.actorOf(Props[RewardAccumulator], name = "RewardAccumulator")
     Global.rewardPayout = 
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
     Global.stateUpdater = 

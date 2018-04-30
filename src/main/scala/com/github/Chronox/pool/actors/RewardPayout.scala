@@ -5,6 +5,7 @@ import com.github.Chronox.pool.db.{Share, Reward}
 import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
+import akka.pattern.ask
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.{Timeout, ByteString}
 import scala.util.{Failure, Success}
@@ -18,15 +19,10 @@ import HttpMethods._
 import language.postfixOps
 import java.math.BigInteger
 
-case class addRewards(blockId: Long, 
-  currentSharePercents: Map[Long, BigDecimal],
-  historicSharePercents: Map[Long, BigDecimal])
 case class BlockResponse(blockReward: String, totalFeeNQT: String, 
   block: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
-case class getRewards()
 case class PayoutRewards()
-case class clearRewards()
 
 class RewardPayout extends Actor with ActorLogging {
 
@@ -35,26 +31,24 @@ class RewardPayout extends Actor with ActorLogging {
   implicit val formats = DefaultFormats
   final implicit val materializer: ActorMaterializer = 
     ActorMaterializer(ActorMaterializerSettings(context.system))
-  final implicit val timeout: Timeout = 4 seconds
+  final implicit val timeout: Timeout = 10 seconds
 
-  var unpaidRewards: TrieMap[Long, List[Reward]] = TrieMap[Long, List[Reward]]()
   val burstToNQT = 100000000L
   val http = Http(context.system)
   var baseURI = Uri(Config.NODE_ADDRESS + "/burst")
 
-  override def preStart() {
-    unpaidRewards = Global.poolDB.loadRewardShares()
-  }
-
   def receive() = {
     case PayoutRewards() => {
+
+      val rewardFuture = (Global.rewardAccumulator ? getUnpaidRewards())
+        .mapTo[Map[Long, List[Reward]]]
+      var unpaidRewards = Await.result(rewardFuture, timeout.duration)
+
       var blockToNQT = scala.collection.mutable.Map[Long, Long]()
       var userToRewards = 
         scala.collection.mutable.Map[Long, ListBuffer[Reward]]()
       var responseFutureList = new ListBuffer[Future[HttpResponse]]()
       val parseFutureList = new ListBuffer[Future[akka.util.ByteString]]()
-
-
 
       // Send out requests for block reward information
       for((blockId, rewards) <- unpaidRewards) {
@@ -129,12 +123,11 @@ class RewardPayout extends Actor with ActorLogging {
                   val tx = parse(body.utf8String).extract[TransactionResponse]
                   if(tx.broadcast){
                     log.info("Tx " + tx.transaction + " broadcasted!")
-                    for(reward <- sentRewards.toList) reward.isPaid = true
+                    val sentRewardsList = sentRewards.toList
+                    for(reward <- sentRewardsList) reward.isPaid = true
                     Global.dbWriter ! writeFunction(
-                      () => Global.poolDB.markRewardsAsPaid(sentRewards.toList))
-                    unpaidRewards = unpaidRewards.map{ 
-                      case(k,v) => (k, v.filter(!_.isPaid))}
-                    unpaidRewards.retain((k,v) => !v.isEmpty)      
+                      () => Global.poolDB.markRewardsAsPaid(sentRewardsList))
+                    Global.rewardAccumulator ! dumpPaidRewards(sentRewardsList)
                   } else {
                     log.error("Tx " + tx.transaction + " was not broadcasted")
                   }
@@ -152,26 +145,6 @@ class RewardPayout extends Actor with ActorLogging {
         else log.info("User " + id.toString + " could not pay the TX fee")
       }
     }
-    case addRewards(blockId: Long, 
-      currentSharePercents: Map[Long, BigDecimal],
-      historicSharePercents: Map[Long, BigDecimal]) => {
-      // Add historical rewards for the block
-      var rewards = historicSharePercents.map{case(k,v) => 
-        (k, new Reward(k, blockId, 0.0, v, false))}
-
-      // Add current share rewards for the block, if they exist
-      for((id, percent) <- currentSharePercents) rewards contains id match {
-        case true => rewards(id).currentPercent = percent
-        case false => rewards += (
-          id->(new Reward(id, blockId, percent, 0.0, false)))
-      } 
-      val rewardList = rewards.values.toList
-      unpaidRewards += (blockId->rewardList)
-      Global.dbWriter ! writeFunction(
-        () => Global.poolDB.addRewardList(rewardList))
-    }
-    case getRewards() => sender ! unpaidRewards.toMap
-    case clearRewards() => unpaidRewards = TrieMap[Long, List[Reward]]()
     case Global.setSubmitURI(uri: String) => baseURI = Uri(uri)   
   }
 }

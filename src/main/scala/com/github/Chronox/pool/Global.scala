@@ -15,6 +15,7 @@ object Global {
   var deadlineChecker: ActorRef = null
   var userManager: ActorRef = null
   var shareManager: ActorRef = null
+  var rewardAccumulator: ActorRef = null
   var rewardPayout: ActorRef = null
   var dbWriter: ActorRef = null
   var dbReader: ActorRef = null

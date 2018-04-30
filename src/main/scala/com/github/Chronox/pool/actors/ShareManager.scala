@@ -44,10 +44,13 @@ class ShareManager extends Actor with ActorLogging {
       currentShares.clear()
     }
     case queueCurrentShares(blockId: Long) => {
-      Global.rewardPayout ! addRewards(blockId, 
+      Global.rewardAccumulator ! addRewards(blockId, 
         sharesToRewardPercents(currentShares.toMap), 
         historicShareQueue.getPercents())
-      self ! dumpCurrentShares()
+      historicShareQueue.enqueue(currentShares clone)
+      Global.dbWriter ! writeFunction(
+        () => Global.poolDB.addShareList(currentShares.values.toList))
+      currentShares.clear()
     }
     case getCurrentPercents() => {
       sender ! sharesToRewardPercents(currentShares.toMap)

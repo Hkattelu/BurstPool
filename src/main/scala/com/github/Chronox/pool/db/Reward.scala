@@ -16,15 +16,15 @@ class Reward (
   def canEqual(a: Any) = a.isInstanceOf[Reward]
 
   // Override equals and hashcode for easy equality checking for Rewards
+  // Ignore whether the reward was paid or not
   override def equals(that: Any): Boolean =
     that match {
       case that: Reward => that.canEqual(this) && this.hashCode == that.hashCode
       case _ => false
     }
   override def hashCode: Int = {
-    var result = userId.hashCode ^ blockId.hashCode ^ 
+    return userId.hashCode ^ blockId.hashCode ^ 
       currentPercent.hashCode ^ historicalPercent.hashCode
-    return (if (isPaid) ~result else result)
   }
   override def toString: String = {
     return "|userId: " + userId + " ,blockId: " + blockId + " percents: (" + 
