@@ -171,6 +171,18 @@ object PoolSchema extends Schema {
     return block
   }
 
+  def blocksToRewardNQT(blockIds: List[Long]): Map[Long, Long] = {
+    var blockToNQTMap = Map[Long, Long]()
+    transaction{
+      blockList = from(blocks)(b => 
+        where(blockIds contains b.id) select(b))
+      for(block <- blockList)
+        blockToNQTMap += (block.id, (1-Config.POOL_FEE)*(
+          block.blockReward * Global.burstToNQT + block.totalFeeNQT))
+    }
+    return blockToNQTMap
+  }
+
   def addPayment(payment: PoolPayment) = {
     transaction{payments.insert(payment)}
   }

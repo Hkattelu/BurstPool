@@ -53,6 +53,8 @@ with DatabaseInit {
       system.actorOf(Props[RewardAccumulator], name = "RewardAccumulator")
     Global.rewardPayout = 
       system.actorOf(Props[RewardPayout], name = "RewardPayout")
+    Global.paymentLedger =
+      system.actorOf(Props[PaymentLedger], name = "PaymentLedger")
     Global.stateUpdater = 
       system.actorOf(Props(new StateUpdater(true)), name="StateUpdater")
     Global.dbWriter = 

@@ -33,115 +33,100 @@ class RewardPayout extends Actor with ActorLogging {
     ActorMaterializer(ActorMaterializerSettings(context.system))
   final implicit val timeout: Timeout = 10 seconds
 
-  val burstToNQT = 100000000L
   val http = Http(context.system)
   var baseURI = Uri(Config.NODE_ADDRESS + "/burst")
 
   def receive() = {
     case PayoutRewards() => {
+      var unpaidRewards: Map[Long, List[Reward]] = Map[Long, List[Reward]]()
+      var blockToNQT = Map[Long, Long] = Map[Long, Long]()
+
       val rewardFuture = (Global.rewardAccumulator ? getUnpaidRewards())
         .mapTo[Map[Long, List[Reward]]]
-      var unpaidRewards = Await.result(rewardFuture, timeout.duration)
+      val loadUnpaidRewards = rewardFuture andThen {
+        case Success(unpaidRewardsMap: Map[Long, List[Reward]]) =>
+          unpaidRewards = unpaidRewardsMap
+        case Failure(error) =>
+          log.error("Error fetching unpaid rewards: " + error.toString)
+      }
 
-      var blockToNQT = scala.collection.mutable.Map[Long, Long]()
-      var userToRewards = 
-        scala.collection.mutable.Map[Long, ListBuffer[Reward]]()
-      var responseFutureList = new ListBuffer[Future[HttpResponse]]()
-      val parseFutureList = new ListBuffer[Future[akka.util.ByteString]]()
-
-      // Send out requests for block reward information
-      for((blockId, rewards) <- unpaidRewards) {
-        val future = http.singleRequest(HttpRequest(
-          uri = baseURI+"?requestType=getBlock&block="+blockId.toString))
-        responseFutureList += future andThen {
-          case Success(res: HttpResponse) => {
-            parseFutureList += res.entity.dataBytes.runFold(ByteString(""))(
-              _ ++ _) andThen { 
-              case Success(body: akka.util.ByteString) => {
-                if(body.utf8String contains "error"){
-                  val errorRes = parse(body.utf8String)
-                    .extract[Global.ErrorMessage]
-                  log.error("Error code " + errorRes.errorCode + ": " + 
-                    errorRes.errorDescription)
-                } else {
-                  val blockRes = parse(body.utf8String).extract[BlockResponse]
-                  val rewardNQT = (blockRes.blockReward.toLong * burstToNQT) +
-                    blockRes.totalFeeNQT.toLong
-                  val blockId = blockRes.block.toLong
-                  blockToNQT+=(blockId->((1-Config.POOL_FEE)*rewardNQT).toLong)
-                  // Note the rewards that each user should be getting paid
-                  for(r <- unpaidRewards.getOrElse(blockId, List[Reward]())) {
-                    if (userToRewards contains r.userId) 
-                      userToRewards(r.userId).append(r)
-                    else 
-                      userToRewards += (r.userId->ListBuffer[Reward](r))
-                  }
-                }
-              }
-            }
-          }
-          case Failure(e) => log.error(
-            "Failed to receive block information:" + e.toString())
+      val loadBlockToNQTMap = loadUnpaidRewards andThen {
+        var blockToNQTFuture = (Global.dbReader ? readFunction(
+          () => Global.poolDB.blockToRewardNQT(unpaidRewards.keys.toList)))
+          .mapTo[Map[Long, Long]]
+        blockToNQTFuture onComplete {
+          case Success(blockToNQTMap: Map[Long, Long]) =>
+            blockToNQT = blockToNQTMap
+          case Failure(error) =>
+            log.error("Error fetching block to NQT map: " + error.toString)
         }
       }
 
-      // Block until done receiving and parsing the responses
-      for(future <- responseFutureList) Await.ready(future, timeout.duration)
-      for(future <- parseFutureList) Await.ready(future, timeout.duration)
+      loadBlockToNQTMap andThen {
+        var userToRewards = 
+          scala.collection.mutable.Map[Long, ListBuffer[Reward]]()
+        var userToNQTAmount =
+          scala.collection.mutable.Map[Long, Long]()
+        // Compute total reward for each user, then pay it out
+        for((id, rewards) <- userToRewards) {
+          var amount: Long = 0 - burstToNQT
+          var sentRewards = new ListBuffer[Reward]()
 
-      // Compute total reward for each user, then pay it out
-      for((id, rewards) <- userToRewards) {
-        var amount: Long = 0 - burstToNQT
-        var sentRewards = new ListBuffer[Reward]()
-
-        // Calculate the actual reward values in NQTs
-        for(reward <- rewards.toList) {
-          val rewardPercent =
-            (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
-            (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
-          if(blockToNQT contains reward.blockId){
-            amount += (rewardPercent * BigDecimal.valueOf(
-              blockToNQT(reward.blockId))).longValue()
-            sentRewards += reward
+          // Calculate the actual reward values in NQTs
+          for(reward <- rewards.toList) {
+            val rewardPercent =
+              (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
+              (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
+            if(blockToNQT contains reward.blockId){
+              amount += (rewardPercent * BigDecimal.valueOf(
+                blockToNQT(reward.blockId))).longValue()
+              sentRewards += reward
+            }
           }
-        }
+          userToNQTAmount += (reward.userId->amount)
 
-        // Ask to create a transaction if the reward was more than the tx fee
-        if (amount > 0) {
-          val ent = FormData(Map("requestType"->"sendMoney", "deadline"->"1440",
-            "feeNQT"->burstToNQT.toString, "secretPhrase"->Config.SECRET_PHRASE,
-            "recipient"->id.toString, "amountNQT"->amount.toString)).toEntity
-          http.singleRequest(HttpRequest(method = POST, uri = baseURI, 
-            entity = ent)
-          ) onComplete {
-            case Success(res: HttpResponse) => {
-              res.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { 
-                body =>
-                val data = body.utf8String
-                if (data contains "transaction"){
-                  val tx = parse(body.utf8String).extract[TransactionResponse]
-                  if(tx.broadcast){
-                    log.info("Tx " + tx.transaction + " broadcasted!")
-                    val sentRewardsList = sentRewards.toList
-                    for(reward <- sentRewardsList) reward.isPaid = true
-                    Global.dbWriter ! writeFunction(
-                      () => Global.poolDB.markRewardsAsPaid(sentRewardsList))
-                    Global.rewardAccumulator ! dumpPaidRewards(sentRewardsList)
+          // Ask to create a transaction if the reward was more than the tx fee
+          if (amount > 0) {
+            val ent = FormData(Map("requestType"->"sendMoney", 
+              "deadline"->"1440", "feeNQT"->burstToNQT.toString, 
+              "secretPhrase"->Config.SECRET_PHRASE, "recipient"->id.toString, 
+              "amountNQT"->amount.toString)).toEntity
+            http.singleRequest(HttpRequest(method = POST, uri = baseURI, 
+              entity = ent)
+            ) onComplete {
+              case Success(res: HttpResponse) => {
+                res.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { 
+                  body =>
+                  val data = body.utf8String
+                  if (data contains "transaction"){
+                    val tx = parse(body.utf8String).extract[TransactionResponse]
+                    if(tx.broadcast){
+                      log.info("Tx " + tx.transaction + " broadcasted!")
+                      val rewardsList = sentRewards.toList
+                      for(reward <- rewardsList) {
+                        reward.isPaid = true
+                        Global.paymentLedger ! payPendingPayment(reward.userId, 
+                          userToNQTAmount(reward.userId))
+                      }
+                      Global.dbWriter ! writeFunction(
+                        () => Global.poolDB.markRewardsAsPaid(rewardsList))
+                      Global.rewardAccumulator ! dumpPaidRewards(rewardsList)
+                    } else {
+                      log.error("Tx " + tx.transaction + " was not broadcasted")
+                    }
                   } else {
-                    log.error("Tx " + tx.transaction + " was not broadcasted")
+                    val e = parse(data).extract[Global.ErrorMessage]
+                    log.error("Error code: " + e.errorCode + ", " + 
+                      e.errorDescription)
                   }
-                } else {
-                  val e = parse(data).extract[Global.ErrorMessage]
-                  log.error("Error code: " + e.errorCode + ", " + 
-                    e.errorDescription)
                 }
               }
+              case Failure(error) => log.error(
+                "Transaction failed: " + error.toString())
             }
-            case Failure(error) => log.error(
-              "Transaction failed: " + error.toString())
-          }
-        } 
-        else log.info("User " + id.toString + " could not pay the TX fee")
+          } 
+          else log.info("User " + id.toString + " could not pay the TX fee")
+        }
       }
     }
     case Global.setSubmitURI(uri: String) => baseURI = Uri(uri)   

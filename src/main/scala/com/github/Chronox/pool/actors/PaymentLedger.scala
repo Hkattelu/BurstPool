@@ -25,27 +25,26 @@ class PaymentLedger extends Actor with ActorLogging {
   }
 
   def receive() = {
-    case addPendingPayment(user: User, nqt: Long) => {
-      payments contains user.id match {
+    case addPendingPayment(id: Long, nqt: Long) => {
+      payments contains id match {
         case false => {
           var payment = new PoolPayment()
-          payment.id = user.id
-          payment.nickName = user.nickName
+          payment.id = id
           payment.pendingNQT = nqt
-          payments += (user.id->payment)
+          payments += (id->payment)
         }
         case true => {
-          var payment = payments(user.id)
+          var payment = payments(id)
           payment.pendingNQT += nqt
-          payments(user.id) = payment
+          payments(id) = payment
         }
       }
     }
-    case payPendingPayment(user: User, nqt: Long) => {
-      var payment = payments(user.id)
+    case payPendingPayment(id: Long, nqt: Long) => {
+      var payment = payments(id)
       payment.pendingNQT -= nqt
       payment.paidNQT += nqt
-      payments(user.id) = payment
+      payments(id) = payment
     }
   }
 }
