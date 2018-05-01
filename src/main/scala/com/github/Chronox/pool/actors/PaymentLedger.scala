@@ -25,6 +25,12 @@ class PaymentLedger extends Actor with ActorLogging {
   }
 
   def receive() = {
+    case addPendingRewards(rewards: List[Reward]) => {
+      val blockToNQTMap = Global.poolDB.blocksToRewardNQT(
+        rewards.map{case(r) => r.blockId})
+      for (reward <- rewards)
+        self ! addPendingPayment(reward.userId, blockToNQTMap(reward.blockId))
+    }
     case addPendingPayment(id: Long, nqt: Long) => {
       payments contains id match {
         case false => {
@@ -32,11 +38,15 @@ class PaymentLedger extends Actor with ActorLogging {
           payment.id = id
           payment.pendingNQT = nqt
           payments += (id->payment)
+          Global.dbWriter ! writeFunction(
+            () => Global.poolDB.addPayment(payment))
         }
         case true => {
           var payment = payments(id)
           payment.pendingNQT += nqt
           payments(id) = payment
+          Global.dbWriter ! writeFunction(
+            () => Global.poolDB.updatePayment(payment))
         }
       }
     }
@@ -45,6 +55,8 @@ class PaymentLedger extends Actor with ActorLogging {
       payment.pendingNQT -= nqt
       payment.paidNQT += nqt
       payments(id) = payment
+      Global.dbWriter ! writeFunction(
+        () => Global.poolDB.updatePayment(payment))
     }
   }
 }

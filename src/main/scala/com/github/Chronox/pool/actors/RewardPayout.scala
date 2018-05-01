@@ -103,11 +103,10 @@ class RewardPayout extends Actor with ActorLogging {
                     if(tx.broadcast){
                       log.info("Tx " + tx.transaction + " broadcasted!")
                       val rewardsList = sentRewards.toList
-                      for(reward <- rewardsList) {
+                      for(reward <- rewardsList)
                         reward.isPaid = true
-                        Global.paymentLedger ! payPendingPayment(reward.userId, 
-                          userToNQTAmount(reward.userId))
-                      }
+                      Global.paymentLedger ! payPendingPayment(id, 
+                          userToNQTAmount(id))
                       Global.dbWriter ! writeFunction(
                         () => Global.poolDB.markRewardsAsPaid(rewardsList))
                       Global.rewardAccumulator ! dumpPaidRewards(rewardsList)

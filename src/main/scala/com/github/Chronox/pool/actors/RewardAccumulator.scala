@@ -18,7 +18,6 @@ case class dumpPaidRewards(paidRewards: List[Reward])
 class RewardAccumulator extends Actor with ActorLogging {
 
   var unpaidRewards: TrieMap[Long, List[Reward]] = TrieMap[Long, List[Reward]]()
-  val burstToNQT = 100000000L
 
   override def preStart() {
     unpaidRewards = Global.poolDB.loadRewardShares()
@@ -40,6 +39,7 @@ class RewardAccumulator extends Actor with ActorLogging {
       } 
       val rewardList = rewards.values.toList
       unpaidRewards += (blockId->rewardList)
+      Global.paymentLedger ! addPendingRewards(rewardList)
       Global.dbWriter ! writeFunction(
         () => Global.poolDB.addRewardList(rewardList))
     }
