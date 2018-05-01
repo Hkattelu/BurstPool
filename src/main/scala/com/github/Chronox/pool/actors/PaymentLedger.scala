@@ -1,6 +1,6 @@
 package com.github.Chronox.pool.actors
-import com.github.Chronox.pool.{Global, Config}
-import com.github.Chronox.pool.db.{Share, Reward}
+import com.github.Chronox.pool.Global
+import com.github.Chronox.pool.db.{User, PoolPayment}
 
 import akka.actor.{Actor, ActorLogging}
 import akka.util.{Timeout, ByteString}
@@ -11,13 +11,13 @@ import scala.concurrent.duration._
 import language.postfixOps
 import java.math.BigInteger
 
-case class updatePendingPayments()
-case class updateCompletedPayments()
+case class addPendingPayment(user: User, nqt: Long)
+case class payPendingPayment(user: User, nqt: Long)
 
 class PaymentLedger extends Actor with ActorLogging {
 
-  var payments: TrieMap[Long, Tuple2[Long, Long]] =
-    TrieMap[Long, Tuple2[Long, Long]]()
+  var payments: TrieMap[Long, PoolPayment] =
+    TrieMap[Long, PoolPayment]()
   val burstToNQT = 100000000L
 
   override def preStart() {
@@ -25,7 +25,27 @@ class PaymentLedger extends Actor with ActorLogging {
   }
 
   def receive() = {
-    case updatePendingPayments() => {}
-    case updateCompletedPayments() => {}
+    case addPendingPayment(user: User, nqt: Long) => {
+      payments contains user.id match {
+        case false => {
+          var payment = new PoolPayment()
+          payment.id = user.id
+          payment.nickName = user.nickName
+          payment.pendingNQT = nqt
+          payments += (user.id->payment)
+        }
+        case true => {
+          var payment = payments(user.id)
+          payment.pendingNQT += nqt
+          payments(user.id) = payment
+        }
+      }
+    }
+    case payPendingPayment(user: User, nqt: Long) => {
+      var payment = payments(user.id)
+      payment.pendingNQT -= nqt
+      payment.paidNQT += nqt
+      payments(user.id) = payment
+    }
   }
 }

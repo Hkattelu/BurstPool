@@ -125,10 +125,6 @@ object PoolSchema extends Schema {
     return userShares
   }
 
-  def addShareList(shareList: List[Share]) = {
-    transaction{shares.insert(shareList)}
-  }
-
   def loadRewardShares(): TrieMap[Long, List[Reward]] = {
     var rewardsToPay = TrieMap[Long, List[Reward]]()
     transaction {
@@ -141,6 +137,20 @@ object PoolSchema extends Schema {
       }
     }
     return rewardsToPay
+  }
+
+  def loadPoolPayments(): TrieMap[Long, PoolPayment] = {
+    var poolPayments = TrieMap[Long, PoolPayment]()
+    transaction {
+      var paymentList = from(payments)(p => select(p))
+      for (payment <- paymentList)
+        poolPayments += payment.id->payment
+    }
+    return poolPayments
+  } 
+
+  def addShareList(shareList: List[Share]) = {
+    transaction{shares.insert(shareList)}
   }
 
   def addRewardList(rewardList: List[Reward]) = {
@@ -159,5 +169,13 @@ object PoolSchema extends Schema {
     var block: Option[Block]  = None
     transaction{block = blocks.lookup(id)}
     return block
+  }
+
+  def addPayment(payment: PoolPayment) = {
+    transaction{payments.insert(payment)}
+  }
+
+  def updatePayment(payment: PoolPayment) = {
+    transaction{payments.update(payment)}
   }
 }
