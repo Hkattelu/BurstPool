@@ -38,11 +38,12 @@ class MiningInfoUpdater extends Actor with ActorLogging {
     block.height = parseLong(blockInfo.height)
     block.nonce = parseLong(blockInfo.nonce)
     block.blockReward = parseLong(blockInfo.blockReward)
+    block.totalFeeNQT = parseLong(blockInfo.totalFeeNQT)
     block.baseTarget = parseLong(blockInfo.baseTarget)
     block.generatorId = parseLong(blockInfo.generator)
     block.generatorRS = blockInfo.generatorRS
     block.generationSig = blockInfo.generationSignature
-    block.timestamp = blockInfo.timestamp
+    block.timeMined = blockInfo.timestamp
     return block
   }
 

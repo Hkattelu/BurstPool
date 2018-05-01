@@ -243,16 +243,36 @@ with DatabaseInit {
     Await.result(future, timeout.duration) should equal (true)
   }
 
-  test("Rewards don't get lost on network error"){
+  test("Rewards don't get lost if amount is too low "){
     Global.rewardPayout ! Global.setSubmitURI(testNodeURL)
-    Thread.sleep(1000)
 
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
-    for(i <- 2 to 5) historic += (i.toLong->quarter)
-    current += (0.toLong->one)
-    Global.rewardAccumulator ! addRewards(1, current, historic)// 2 causes error
-    Thread.sleep(100)
+    current += (1.toLong->quarter) // Quarter share is not enough 
+    Global.rewardAccumulator ! addRewards(1, current, historic)
+    Global.rewardPayout ! PayoutRewards()
+    Thread.sleep(1000)
+    val future = (Global.rewardAccumulator ? getUnpaidRewards())
+      .mapTo[Map[Long, List[Reward]]]
+    val calculated = Await.result(future, timeout.duration)
+    var rewards = Map[Long, List[Reward]]()
+    var rewardList = new ListBuffer[Reward]()
+    rewardList += (new Reward(1, 1L, quarter, zero, false))
+    rewards += (1L->rewardList.toList)
+    calculated.values.head.toSet should equal (rewards.values.head.toSet)
+
+    Global.rewardAccumulator ! clearUnpaidRewards()
+  }
+
+  test("Rewards don't get lost on network error"){
+    Global.rewardPayout ! Global.setSubmitURI(testNodeURL)
+
+    var current = Map[Long, BigDecimal]()
+    var historic = Map[Long, BigDecimal]()
+    // 2 to 5 cause network error
+    for(i <- 2 to 5) historic += (i.toLong->quarter) 
+    current += (0.toLong->one) // 0 causes tx to not be broadcast
+    Global.rewardAccumulator ! addRewards(2, current, historic)
     Global.rewardPayout ! PayoutRewards()
     Thread.sleep(1000)
     val future = (Global.rewardAccumulator ? getUnpaidRewards())
@@ -261,9 +281,9 @@ with DatabaseInit {
     var rewards = Map[Long, List[Reward]]()
     var rewardList = new ListBuffer[Reward]()
     for(i <- 2 to 5) 
-      rewardList += (new Reward(i, 1L, zero, quarter,false))
-    rewardList += (new Reward(0, 1L, one, zero, false))
-    rewards += (1L->rewardList.toList)
+      rewardList += (new Reward(i, 2L, zero, quarter,false))
+    rewardList += (new Reward(0, 2L, one, zero, false))
+    rewards += (2L->rewardList.toList)
     calculated.values.head.toSet should equal (rewards.values.head.toSet)
 
     Global.rewardAccumulator ! clearUnpaidRewards()
@@ -275,8 +295,7 @@ with DatabaseInit {
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->one)
-    Global.rewardAccumulator ! addRewards(2, current, historic)
-    Thread.sleep(100)
+    Global.rewardAccumulator ! addRewards(4, current, historic)
     Global.rewardPayout ! PayoutRewards()
     Thread.sleep(1000)
     val future = (Global.rewardAccumulator ? getUnpaidRewards())

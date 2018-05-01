@@ -1,7 +1,7 @@
 package com.github.Chronox.pool.servlets
 import com.github.Chronox.pool.{Global, Config}
 import com.github.Chronox.pool.actors._
-import com.github.Chronox.pool.db.User
+import com.github.Chronox.pool.db.{User, DatabaseSessionSupport}
 
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.pattern.ask
@@ -18,7 +18,8 @@ import java.lang.Long
 import java.math.BigInteger
 
 class BurstServlet(system: ActorSystem, submissionHandler: ActorRef) 
-extends ScalatraServlet with JacksonJsonSupport with FutureSupport {
+extends ScalatraServlet with JacksonJsonSupport with FutureSupport 
+with DatabaseSessionSupport {
 
   protected implicit def executor: ExecutionContext = system.dispatcher
   protected implicit lazy val jsonFormats: Formats =

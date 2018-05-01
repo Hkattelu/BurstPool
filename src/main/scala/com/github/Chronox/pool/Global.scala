@@ -28,8 +28,8 @@ object Global {
   case class MiningInfo(generationSignature:String, baseTarget: String, 
     height: String)
   case class LastBlockInfo(generationSignature:String, block: String,
-    nonce: String, baseTarget: String, height: String, blockReward: String,
-    generator: String, generatorRS: String, timestamp: String)
+    totalFeeNQT: String, generator: String, generatorRS: String, nonce: String,
+    timestamp: String, baseTarget: String, height: String, blockReward: String)
   case class ErrorMessage(errorCode: String, errorDescription: String)
   case class setSubmitURI(uri: String)
 
@@ -37,6 +37,6 @@ object Global {
   var currentBestDeadline: BigInteger = Config.TARGET_DEADLINE
   var miningInfo: MiningInfo = MiningInfo(null, null, null)
   var lastBlockInfo: LastBlockInfo = LastBlockInfo(null, null, null, null, 
-    null, null, null, null, null)
+    null, null, null, null, null, null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
 }

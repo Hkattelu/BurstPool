@@ -46,11 +46,8 @@ class RewardAccumulator extends Actor with ActorLogging {
     case getUnpaidRewards() => sender ! unpaidRewards.toMap
     case clearUnpaidRewards() => unpaidRewards.clear()
     case dumpPaidRewards(paidRewards: List[Reward]) => {
-      unpaidRewards = unpaidRewards.map{
-        case (k,v) => {
-          (k, v diff paidRewards)
-        }
-      }
+      log.info("Reached dump: rewards are: " + paidRewards.toString)
+      unpaidRewards = unpaidRewards.map{case (k,v) => {(k, v diff paidRewards)}}
       unpaidRewards.retain((k,v) => !v.isEmpty)
     }
   }

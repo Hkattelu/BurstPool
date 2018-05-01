@@ -8,6 +8,7 @@ import org.squeryl.Schema
 import org.squeryl.ForeignKeyDeclaration
 import language.postfixOps
 import scala.collection.concurrent.TrieMap
+import scala.collection.mutable.ListBuffer
 import java.util.concurrent.ConcurrentLinkedQueue
   
 object PoolSchema extends Schema {
@@ -23,8 +24,8 @@ object PoolSchema extends Schema {
     u.lastSubmitHeight is (indexed),
     columns(u.id, u.nickName) are (unique)))
   on(blocks)(b => declare(
-    b.generatorId is (indexed),
-    b.height is (unique, indexed)))
+    b.id is (primaryKey), // necessary to turn off auto-incrementing
+    b.height is (unique)))
   on(rewards)(r => declare(columns(r.userId, r.blockId) are (indexed)))
   on(shares)(s => declare(columns(s.blockId, s.userId) are (indexed)))
 
@@ -32,6 +33,8 @@ object PoolSchema extends Schema {
     (u, s) => u.id === s.userId)
   val usersToRewards = oneToManyRelation(users, rewards).via(
     (u, r) => u.id === r.userId)
+  val usersToPayments = oneToManyRelation(users, payments).via(
+    (u, p) => u.id === p.id)
   val blocksToShares = oneToManyRelation(blocks, shares).via(
     (b, s) => b.id === s.blockId)
   val blocksToRewards = oneToManyRelation(blocks, rewards).via(
@@ -39,6 +42,7 @@ object PoolSchema extends Schema {
 
   usersToShares.foreignKeyDeclaration.constrainReference(onDelete cascade)
   usersToRewards.foreignKeyDeclaration.constrainReference(onDelete cascade)
+  usersToPayments.foreignKeyDeclaration.constrainReference(onDelete cascade)
   blocksToShares.foreignKeyDeclaration.constrainReference(onDelete cascade)
   blocksToRewards.foreignKeyDeclaration.constrainReference(onDelete cascade)
 
@@ -46,15 +50,23 @@ object PoolSchema extends Schema {
     foreignKeyDeclaration: ForeignKeyDeclaration) =
   foreignKeyDeclaration.constrainReference
 
-  def generateDB() = {transaction{this.create}}
+  override def drop = transaction {super.drop}
 
-  def clearAll() = {
-    transaction{ 
-      users.deleteWhere(u => 1 === 1)
-      blocks.deleteWhere(b => 1 === 1)
-      rewards.deleteWhere(r => 1 === 1)
-      shares.deleteWhere(s => 1 === 1)
+  def generateDB() = {
+    transaction{
+      this.create
     }
+  }
+
+  def addTestData() = {
+    var blockList = List[Block]()
+    for (i <- 1 to 5) blockList = new Block(i, i, i) :: blockList
+    transaction {
+      blocks.insert(blockList)
+    }
+  }
+
+  def resetAll() = {
   }
 
   def addUser(user: User): Boolean = {
@@ -171,15 +183,20 @@ object PoolSchema extends Schema {
     return block
   }
 
-  def blocksToRewardNQT(blockIds: List[Long]): Map[Long, Long] = {
-    var blockToNQTMap = Map[Long, Long]()
+  def blocksToRewardNQT(blockIds: List[Long]): TrieMap[Long, Long] = {
+    var blockToNQTMap = TrieMap[Long, Long]()
+    var blockList = new ListBuffer[Block]()
     transaction{
-      blockList = from(blocks)(b => 
-        where(blockIds contains b.id) select(b))
-      for(block <- blockList)
-        blockToNQTMap += (block.id, (1-Config.POOL_FEE)*(
-          block.blockReward * Global.burstToNQT + block.totalFeeNQT))
+      for (id <- blockIds) 
+        blocks.lookup(id) match {
+          case Some(block) => blockList += block
+          case None =>
+        }
     }
+    val afterFee = 1 - Config.POOL_FEE
+    for(block <- blockList.toList)
+      blockToNQTMap += (block.id->(afterFee*BigDecimal.valueOf(
+        block.blockReward * Global.burstToNQT + block.totalFeeNQT)).longValue)
     return blockToNQTMap
   }
 
