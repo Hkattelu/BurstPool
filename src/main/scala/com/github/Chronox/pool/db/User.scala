@@ -9,11 +9,9 @@ class User (
   var nickName: Option[String],
   var isActive: Boolean,
   var lastSubmitTime: Timestamp,
-  var pendingNQT: Long,
-  var payedNQT: Long,
   var reported_TB: Option[BigDecimal],
   var miner_type: Option[String],
 ) extends KeyedEntity[Long] {
-  def this() = this(0, null, 0, None, false, null, 0L, 0L, None, None)
-  def this(id: Long) = this(id, null, 0, None, false, null, 0L, 0L, None, None)
+  def this() = this(0, null, 0, None, false, null, None, None)
+  def this(id: Long) = this(id, null, 0, None, false, null, None, None)
 }

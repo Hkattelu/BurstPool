@@ -16,7 +16,7 @@ object PoolSchema extends Schema {
   val blocks = table[Block] 
   val rewards = table[Reward]
   val shares = table[Share]
-  val pool = table[Pool]
+  val payments = table[PoolPayment]
 
   on(users)(u => declare(
     u.id is (indexed),

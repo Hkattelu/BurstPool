@@ -39,7 +39,6 @@ class RewardPayout extends Actor with ActorLogging {
 
   def receive() = {
     case PayoutRewards() => {
-
       val rewardFuture = (Global.rewardAccumulator ? getUnpaidRewards())
         .mapTo[Map[Long, List[Reward]]]
       var unpaidRewards = Await.result(rewardFuture, timeout.duration)

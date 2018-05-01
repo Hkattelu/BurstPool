@@ -4,14 +4,9 @@ import com.github.Chronox.pool.db.{Share, Reward}
 
 import akka.actor.{Actor, ActorLogging}
 import akka.pattern.ask
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import akka.util.{Timeout, ByteString}
-import scala.util.{Failure, Success}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Future, Await}
-import scala.concurrent.duration._
+import scala.concurrent.Future
 import language.postfixOps
-import java.math.BigInteger
 
 case class addRewards(blockId: Long, 
   currentSharePercents: Map[Long, BigDecimal],
@@ -23,7 +18,6 @@ case class dumpPaidRewards(paidRewards: List[Reward])
 class RewardAccumulator extends Actor with ActorLogging {
 
   var unpaidRewards: TrieMap[Long, List[Reward]] = TrieMap[Long, List[Reward]]()
-  var rewardsToRetry: Map[Long, List[Reward]] = Map[Long, List[Reward]]()
   val burstToNQT = 100000000L
 
   override def preStart() {
