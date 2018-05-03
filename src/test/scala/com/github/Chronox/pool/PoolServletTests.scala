@@ -89,37 +89,18 @@ with DatabaseInit {
   }
 
   test("All servlets up and running"){
-    get("/test"){
-      status should equal (400)
-    }
+    get("/test"){ status should equal (400) }
+    get("/"){ status should equal (200) }
+    get("/getBurstPrice"){ status should equal (200) }
+    get("/statistics"){ status should equal (200) }
+    get("/payment"){ status should equal (200) }
+    get("/shares/current"){ status should equal (200) }
+    get("/shares/historic"){ status should equal (200) }
+    get("/burst"){ status should equal (400) }
+  }
 
-    get("/"){
-      status should equal (200)
-    }
-
-    get("/getBurstPrice"){
-      status should equal (200)
-    }
-
-    get("/statistics"){
-      status should equal (200)
-    }
-
-    get("/payment"){
-      status should equal (200)
-    }
-
-    get("/shares/current"){
-      status should equal (200)
-    }
-
-    get("/shares/historic"){
-      status should equal (200)
-    }
-
-    get("/burst"){
-      status should equal (400)
-    }
+  test("Bad servlets give 404 error"){
+    get("/ThisServletDoesntExist"){ status should equal (404) }
   }
 
   test("Getting Burst price"){
@@ -223,6 +204,7 @@ with DatabaseInit {
     Thread.sleep(50)
     Global.poolStatistics.numTotalUsers.get() should equal (5)
     Global.poolStatistics.numActiveUsers.get() should equal (5)
+    Global.poolStatistics.minerCounts("Unknown") should equal (5)
   }
 
   test("Banning Users pool statistics"){

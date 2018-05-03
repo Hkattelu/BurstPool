@@ -56,13 +56,14 @@ object PoolStatistics {
   }
   def addMiner(miner_type: Option[String]) {
     miner_type match {
-      case Some(miner) => {
-        minerCounts contains miner match {
-          case true => minerCounts(miner) += 1
-          case false => minerCounts += miner->1
-        }
-      }
-      case None =>
+      case Some(miner) => incrementMinerCount(miner)
+      case None => incrementMinerCount("Unknown")
+    }
+  }
+  def incrementMinerCount(miner_type: String) {
+    minerCounts contains miner_type match {
+      case true => minerCounts(miner_type) += 1
+      case false => minerCounts += miner_type->1
     }
   }
 
