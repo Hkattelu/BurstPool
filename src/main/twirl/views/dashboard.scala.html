@@ -7,14 +7,57 @@
       <h1 class="title">Burstcoin mining pool</h1>
     </div>
   </div>
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="info-container medium">
+        <table align="center">
+          <tr>
+            <th>Pool NQT Earned</th>
+            <th>Last Submit time</th>
+            <th># Active users</th>
+            <th># Total users</th>
+            <th># Banned Addresses</th>
+            <th>Server Uptime (ms)</th>
+          </tr>
+          <tr>
+            <td>{{stats.NQTEarned}}</td>
+            <td>{{stats.lastSubmitTime}}</td>
+            <td>{{stats.activeUsers}}</td>
+            <td>{{stats.totalUsers}}</td>
+            <td>{{stats.bannedAddresses}}</td>
+            <td>{{stats.serverUptime}}</td>
+          </tr>
+        </table>
+        <table align="center">
+          <tr>
+            <th>Last Block ID</th>
+            <th>Last Block Generator Address</th>
+            <th>Last Block Mined at</th>
+            <th>Last Block reward (BURST)</th>
+            <th>Last Block Fees (NQT)</th>
+            <th>Last Block Winning nonce</th>
+          </tr>
+          <tr>
+            <td>{{lastBlock.block}}</td>
+            <td>{{lastBlock.generatorRS}}</td>
+            <td>{{lastBlock.timestamp}}</td>
+            <td>{{lastBlock.blockReward}}</td>
+            <td>{{lastBlock.totalFeeNQT}}</td>
+            <td>{{lastBlock.nonce}}</td>
+          </tr>
+        </table>
+
+      </div>
+    </div>
+  </div>
   <div class="main-panels row">
     <div class="col-md-4 col-sm-4 col-xs-12">
-      <div class="info-container">
+      <div class="info-container medium">
         <strong>Mining Info</strong>
         <table align="center">
           <tr>
-            <td>Current block reward</td>
-            <td>{{miningInfo.blockReward}}</td>
+            <td>Generation Signature</td>
+            <td>{{miningInfo.generationSignature}}</td>
           </tr>
           <tr>
             <td>Base Target</td>
@@ -24,17 +67,9 @@
             <td>Blockchain height</td>
             <td>{{miningInfo.height}}</td>
           </tr>
-          <tr>
-            <td>Last block generator</td>
-            <td>{{miningInfo.generatorRS}}</td>
-          </tr>
-          <tr>
-            <td># of pending transactions</td>
-            <td>{{miningInfo.numberOfTransactions}}</td>
-          </tr>
         </table>
       </div>
-      <div class="info-container">
+      <div class="info-container medium">
         <table align="center">
           <tr>
             <th></th>
@@ -78,7 +113,7 @@
   </div>
   <div class="select-graph row">
     <div class="col-md-2 col-sm-4 col-xs-12">
-      <div class="info-container" id="graph-selector">
+      <div class="info-container medium" id="graph-selector">
         <ul>
           <li><a href="#!">Pool Active users</a></li>
           <li><a href="#!burstEarned">BURST earned</a></li>
@@ -88,7 +123,7 @@
       </div>
     </div>
     <div class="col-md-10 col-sm-8 col-xs-12">
-      <div class="info-container" id="graph-container" ng-view>
+      <div class="info-container medium" id="graph-container" ng-view>
       </div>
     </div>  
   </div>

@@ -20,7 +20,6 @@ object Global {
   var paymentLedger: ActorRef = null
   var dbWriter: ActorRef = null
   var dbReader: ActorRef = null
-
   val poolStatistics = PoolStatistics
   val poolDB = PoolSchema
   val burstToNQT = 100000000L

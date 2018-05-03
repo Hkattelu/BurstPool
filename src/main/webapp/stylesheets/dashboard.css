@@ -21,11 +21,18 @@ body {
   border-radius: 5px;
   padding: 10px;
   margin-bottom: 2vh;
-  min-height: 30vh;
   text-align: center;
   text-overflow: ellipsis;
   background-color: rgba(256, 256, 256, 0.4);
   z-index: 1;
+}
+
+.short {
+  min-height: 15vh;
+}
+
+.medium {
+  min-height: 30vh;
 }
 
 .tall {
@@ -34,12 +41,16 @@ body {
 
 table {
   margin-top: 2vh;
+  border-radius: 1px;
+  table-layout: fixed;
+  width: 100%;
 }
 
 table, th, td {
   text-align: center;
   padding: 3px;
   border: 1px solid blue;
+  word-wrap: break-word;
 }
 
 .select-graph {

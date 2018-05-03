@@ -1,6 +1,6 @@
 const currencies = ["BURST", "USD", "BTC"];
-var pending_burst = "19547.17";
-var earned_burst = "20234.32";
+var pending_burst;
+var earned_burst;
 var price_usd;
 var price_btc;
 
@@ -11,7 +11,7 @@ function trim(num) {
 angular.module('burstPool', []).controller(
   'InfoCtrl', function ($http, $scope, $location, $parse) {
   $scope.updatePrice = function () {
-    $http.get("/getBurstPrice").then(function(response) {
+    $http.get("/pool/getBurstPrice").then(function(response) {
       price_usd = response.data.price_usd;
       price_btc = response.data.price_btc;
       $scope.pendingBURST = trim(pending_burst);
@@ -31,9 +31,28 @@ angular.module('burstPool', []).controller(
     }).catch(function(err){console.log(err)})
   };
 
+  $scope.updateLastBlockInfo = function () {
+    $http.get("/burst", {
+      params:{"requestType":"getBlock"}}).
+    then(function(response) {
+      $parse("lastBlock").assign($scope, response.data)
+    }).catch(function(err){console.log(err)})
+  };
+
+  $scope.updateStatistics = function () {
+    $http.get("/pool/statistics").then(function(response) {
+      $parse("stats").assign($scope, response.data)
+    }).catch(function(err){console.log(err)})
+  };
+
   $scope.updatePrice();
   $scope.updateMiningInfo();
-  setInterval($scope.updatePrice, 10000);
-  setInterval($scope.updateMiningInfo, 10000);
+  $scope.updateLastBlockInfo();
+  $scope.updateStatistics();
+
+  setInterval($scope.updatePrice, 5000); // Every 5 seconds
+  setInterval($scope.updateMiningInfo, 5000); // Every 5 seconds
+  setInterval($scope.updateLastBlockInfo, 5000); // Every 5 seconds
+  setInterval($scope.updateStatistics, 60000); // Every minute
 });
 

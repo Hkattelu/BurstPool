@@ -36,6 +36,7 @@ with DatabaseSessionSupport {
       params("requestType") match {
         case "submitNonce" => "Submitting nonces only takes POST requests"
         case "getMiningInfo" => Global.miningInfo
+        case "getBlock" => Global.lastBlockInfo
         case "sendMoney" => "Money cannot be sent through this pool"
         case _ => {
           response.setStatus(400)
@@ -72,6 +73,7 @@ with DatabaseSessionSupport {
           }
         }
         case "getMiningInfo" => "Getting mining info only takes GET requests"
+        case "getBlock" => "Getting last Block only takes GET requests"
         case "sendMoney" => "Money cannot be sent through this pool"
         case _ => {
           response.setStatus(400)
