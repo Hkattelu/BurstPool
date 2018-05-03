@@ -147,12 +147,12 @@ class UserManager extends Actor with ActorLogging {
       Global.poolStatistics.decrementActiveUsersBy(prevNum - activeUsers.size)
 
       // Recalculate the total active network TB if users went inactive
-      if (activeUsers.size != prevNum){
+      /*if (activeUsers.size != prevNum){
         Global.poolStatistics.resetActiveTB()
         for ((k,v) <- activeUsers) {
-          //Global.poolStatistics.addActiveTB(v.reported_TB)
+          Global.poolStatistics.addActiveTB(v.reported_TB)
         }
-      }
+      }*/
     }
     case updateSubmitTime(accId: Long) => {
       // Update the last submit time of users who aren't banned

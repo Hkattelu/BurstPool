@@ -89,11 +89,31 @@ with DatabaseInit {
   }
 
   test("All servlets up and running"){
+    get("/test"){
+      status should equal (400)
+    }
+
     get("/"){
       status should equal (200)
     }
 
     get("/getBurstPrice"){
+      status should equal (200)
+    }
+
+    get("/statistics"){
+      status should equal (200)
+    }
+
+    get("/payment"){
+      status should equal (200)
+    }
+
+    get("/shares/current"){
+      status should equal (200)
+    }
+
+    get("/shares/historic"){
       status should equal (200)
     }
 
@@ -370,6 +390,8 @@ with DatabaseInit {
   test("Payment Ledger stores correct pending payments"){
     Global.rewardAccumulator ! clearUnpaidRewards()
     Global.paymentLedger ! clearPayments()
+    Global.poolStatistics.resetPoolStatistics()
+
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->one) 
@@ -384,12 +406,14 @@ with DatabaseInit {
       .longValue()
     payment.pendingNQT should equal (amount)
     payment.paidNQT should equal (0L)
+    Global.poolStatistics.NQTEarned.get should equal(amount)
   }
 
   test("Payment Ledger updates pending payments after payout"){
     Global.rewardPayout ! Global.setSubmitURI(testNodeURL)
     Global.rewardAccumulator ! clearUnpaidRewards()
     Global.paymentLedger ! clearPayments()
+    Global.poolStatistics.resetPoolStatistics()
 
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
@@ -406,6 +430,7 @@ with DatabaseInit {
       .longValue() - Global.burstToNQT
     payment.pendingNQT should equal (0L)
     payment.paidNQT should equal (amount)
+    Global.poolStatistics.NQTEarned.get should equal(amount + Global.burstToNQT)
   }
 
   override def afterAll() {
