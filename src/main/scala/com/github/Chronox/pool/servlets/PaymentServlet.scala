@@ -30,11 +30,11 @@ extends ScalatraServlet with JacksonJsonSupport with FutureSupport {
     if (params contains "account") {
       val id = new BigInteger(params("account")).longValue()
       new AsyncResult() {
-        val is = (paymentLedger ? getUserPayment(id))(5 seconds)
+        val is = (paymentLedger ? getUserPayment(id))(duration)
       }
     } else {
       new AsyncResult() {
-        val is = (paymentLedger ? getPayments())(5 seconds)
+        val is = (paymentLedger ? getPayments())(duration)
       }
     }
   }

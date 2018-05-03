@@ -21,6 +21,8 @@ case class getAverageHistoricalPercents()
 
 class ShareManager extends Actor with ActorLogging {
   var currentShares: TrieMap[Long, Share] = TrieMap[Long, Share]()
+  var currentPercents: Map[Long, BigDecimal] = Map[Long, BigDecimal]()
+  var historicalPercents: Map[Long, BigDecimal] = Map[Long, BigDecimal]()
   val one = BigDecimal.valueOf(1)
 
   override def preStart() {
@@ -36,28 +38,28 @@ class ShareManager extends Actor with ActorLogging {
         case true => currentShares(user.id) = share
         case false => currentShares += (user.id->share)
       }
+      currentPercents = sharesToRewardPercents(currentShares.toMap)
     }
     case dumpCurrentShares() => {
       historicShareQueue.enqueue(currentShares clone)
+      historicalPercents = historicShareQueue.getPercents()
       Global.dbWriter ! writeFunction(
         () => Global.poolDB.addShareList(currentShares.values.toList))
       currentShares.clear()
     }
     case queueCurrentShares(blockId: Long) => {
+      historicalPercents = historicShareQueue.getPercents()
       Global.rewardAccumulator ! addRewards(blockId, 
-        sharesToRewardPercents(currentShares.toMap), 
-        historicShareQueue.getPercents())
+        currentPercents, historicalPercents)
       historicShareQueue.enqueue(currentShares clone)
       Global.dbWriter ! writeFunction(
         () => Global.poolDB.addShareList(currentShares.values.toList))
       currentShares.clear()
     }
-    case getCurrentPercents() => {
-      sender ! sharesToRewardPercents(currentShares.toMap)
-    }
-    case getAverageHistoricalPercents() => {
-      sender ! historicShareQueue.getPercents()
-    }
+    case getCurrentPercents() =>
+      sender ! currentPercents
+    case getAverageHistoricalPercents() =>
+      sender ! historicalPercents
   }
 
   def sharesToRewardPercents(weights: Map[Long, Share]): 
