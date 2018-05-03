@@ -3,6 +3,8 @@ import com.github.Chronox.pool._
 import com.github.Chronox.pool.actors._
 import com.github.Chronox.pool.servlets._
 import com.github.Chronox.pool.db._
+import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler}
+import org.scalatra.servlet.ScalatraListener
 import akka.util.Timeout
 import akka.pattern.ask
 import scala.collection.mutable.ListBuffer
@@ -16,6 +18,7 @@ import org.scalatra._
 import _root_.akka.actor.{Props, ActorSystem}
 import scalaj.http.Http
 import net.liftweb.json._
+import javax.servlet.ServletContext
 import java.time.LocalDateTime
 import java.math.BigInteger
 import scala.math.BigDecimal.RoundingMode
@@ -74,14 +77,11 @@ with DatabaseInit {
       case None =>
         sys.error("can't calculate base URL: no connector")
     }
-    addServlet(classOf[PoolServlet], "/*")
-    addServlet(classOf[BurstPriceServlet], "/getBurstPrice")
-    addServlet(classOf[StatisticsServlet], "/statistics")    
+    addServlet(new PoolServlet(), "/")
+    addServlet(new InterfaceUpdateServlet(system), "/pool")  
     addServlet(new MockBurstServlet(system), "/test")
     addServlet(new BurstServlet(system, system.actorOf(Props[SubmissionHandler],
       name="SubmissionHandler")), "/burst")
-    addServlet(new PaymentServlet(system, Global.paymentLedger), "/payment")
-    addServlet(new ShareServlet(system, Global.shareManager), "/shares")
 
     Global.miningInfo = new Global.MiningInfo(
       "916b4758655bedb6690853edf33fc65a6b0e1b8f15b13f8615e053002cb06729", 
@@ -91,11 +91,11 @@ with DatabaseInit {
   test("All servlets up and running"){
     get("/test"){ status should equal (400) }
     get("/"){ status should equal (200) }
-    get("/getBurstPrice"){ status should equal (200) }
-    get("/statistics"){ status should equal (200) }
-    get("/payment"){ status should equal (200) }
-    get("/shares/current"){ status should equal (200) }
-    get("/shares/historic"){ status should equal (200) }
+    get("/pool/getBurstPrice"){ status should equal (200) }
+    get("/pool/statistics"){ status should equal (200) }
+    get("/pool/payments"){ status should equal (200) }
+    get("/pool/shares/current"){ status should equal (200) }
+    get("/pool/shares/historic"){ status should equal (200) }
     get("/burst"){ status should equal (400) }
   }
 
@@ -104,7 +104,7 @@ with DatabaseInit {
   }
 
   test("Getting Burst price"){
-    get("/getBurstPrice"){
+    get("/pool/getBurstPrice"){
       status should equal (200)
       body should include ("price_usd")
       body should include ("price_btc")

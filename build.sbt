@@ -9,6 +9,7 @@ resolvers += Classpaths.typesafeReleases
 libraryDependencies ++= Seq(
   "org.scalatra" %% "scalatra" % ScalatraVersion,
   "org.scalatra" %% "scalatra-scalatest" % ScalatraVersion % "test",
+  "org.scalatra" %% "scalatra-atmosphere" % "2.6.3",
   "com.typesafe.akka" %% "akka-http"   % "10.0.11", 
   "com.typesafe.akka" %% "akka-stream" % "2.5.9",
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "runtime",
@@ -20,7 +21,11 @@ libraryDependencies ++= Seq(
   "org.squeryl" %% "squeryl" % "0.9.5-7",
   "org.scalaj" %% "scalaj-http" % "2.3.0",
   "mysql" % "mysql-connector-java" % "5.1.10",
-  "c3p0" % "c3p0" % "0.9.1.2"
+  "c3p0" % "c3p0" % "0.9.1.2",
+  "org.eclipse.jetty" % "jetty-plus" % 
+    "9.2.17.v20160517" % "container;provided",
+  "org.eclipse.jetty.websocket" % "websocket-server"
+    % "9.2.17.v20160517" % "container;provided"
 )
 enablePlugins(SbtTwirl)
 enablePlugins(ScalatraPlugin)

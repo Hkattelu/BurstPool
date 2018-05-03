@@ -102,7 +102,6 @@ with DatabaseSessionSupport {
     }
     else if (params contains "deadline")
       miner_type = Some("Blago")
-    Global.poolStatistics.addMiner(miner_type)
     return miner_type
   }
 }
