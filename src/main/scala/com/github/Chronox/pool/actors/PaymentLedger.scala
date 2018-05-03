@@ -16,7 +16,9 @@ case class addPendingRewards(rewards: List[Reward])
 case class addPendingPayment(id: Long, nqt: Long)
 case class payPendingPayment(id: Long, nqt: Long)
 case class clearPayments()
+case class getPaymentsMap()
 case class getPayments()
+case class getUserPayment(id: Long)
 
 class PaymentLedger extends Actor with ActorLogging {
 
@@ -78,6 +80,8 @@ class PaymentLedger extends Actor with ActorLogging {
         () => Global.poolDB.updatePayment(payment))
     }
     case clearPayments() => payments.clear()
-    case getPayments() => sender ! payments.toMap
+    case getPaymentsMap() => sender ! payments.toMap
+    case getPayments() => sender ! payments.values
+    case getUserPayment(id: Long) => sender ! payments(id)
   }
 }

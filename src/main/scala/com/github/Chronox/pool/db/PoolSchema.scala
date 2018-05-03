@@ -66,9 +66,6 @@ object PoolSchema extends Schema {
     }
   }
 
-  def resetAll() = {
-  }
-
   def addUser(user: User): Boolean = {
     try {
       transaction {
@@ -196,7 +193,7 @@ object PoolSchema extends Schema {
     val afterFee = 1 - Config.POOL_FEE
     for(block <- blockList.toList)
       blockToNQTMap += (block.id->(afterFee*BigDecimal.valueOf(
-        block.blockReward * Global.burstToNQT + block.totalFeeNQT)).longValue)
+        (block.blockReward * Global.burstToNQT) + block.totalFeeNQT)).longValue)
     return blockToNQTMap
   }
 

@@ -372,7 +372,7 @@ with DatabaseInit {
     current += (1.toLong->one) 
     Global.rewardAccumulator ! addRewards(2, current, historic)
     Thread.sleep(100)
-    val paymentFuture = (Global.paymentLedger ? getPayments())
+    val paymentFuture = (Global.paymentLedger ? getPaymentsMap())
       .mapTo[Map[Long, PoolPayment]]
     val payments = Await.result(paymentFuture, timeout.duration)
     val payment = payments(1)
@@ -391,14 +391,14 @@ with DatabaseInit {
     var current = Map[Long, BigDecimal]()
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->one) 
-    Global.rewardAccumulator ! addRewards(4, current, historic)
+    Global.rewardAccumulator ! addRewards(5, current, historic)
     Global.rewardPayout ! payoutRewards()
-    Thread.sleep(2500)
-    val paymentFuture = (Global.paymentLedger ? getPayments())
+    Thread.sleep(500)
+    val paymentFuture = (Global.paymentLedger ? getPaymentsMap())
       .mapTo[Map[Long, PoolPayment]]
     val payments = Await.result(paymentFuture, timeout.duration)
     val payment = payments(1)
-    var amount: Long = (4 * Global.burstToNQT * BigDecimal.valueOf(
+    var amount: Long = (5 * Global.burstToNQT * BigDecimal.valueOf(
       Config.CURRENT_BLOCK_SHARE) * BigDecimal.valueOf(1 - Config.POOL_FEE))
       .longValue() - Global.burstToNQT
     payment.pendingNQT should equal (0L)

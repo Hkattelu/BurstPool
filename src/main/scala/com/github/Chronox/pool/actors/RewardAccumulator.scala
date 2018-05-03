@@ -32,11 +32,12 @@ class RewardAccumulator extends Actor with ActorLogging {
         (k, new Reward(k, blockId, 0.0, v, false))}
 
       // Add current share rewards for the block, if they exist
-      for((id, percent) <- currentSharePercents) rewards contains id match {
-        case true => rewards(id).currentPercent = percent
-        case false => rewards += (
-          id->(new Reward(id, blockId, percent, 0.0, false)))
-      } 
+      for((id, percent) <- currentSharePercents) 
+        rewards contains id match {
+          case true => rewards(id).currentPercent = percent
+          case false => rewards += (
+            id->(new Reward(id, blockId, percent, 0.0, false)))
+        } 
       val rewardList = rewards.values.toList
       unpaidRewards += (blockId->rewardList)
       Global.paymentLedger ! addPendingRewards(rewardList)
@@ -46,7 +47,6 @@ class RewardAccumulator extends Actor with ActorLogging {
     case getUnpaidRewards() => sender ! unpaidRewards.toMap
     case clearUnpaidRewards() => unpaidRewards.clear()
     case dumpPaidRewards(paidRewards: List[Reward]) => {
-      log.info("Reached dump: rewards are: " + paidRewards.toString)
       unpaidRewards = unpaidRewards.map{case (k,v) => {(k, v diff paidRewards)}}
       unpaidRewards.retain((k,v) => !v.isEmpty)
     }
