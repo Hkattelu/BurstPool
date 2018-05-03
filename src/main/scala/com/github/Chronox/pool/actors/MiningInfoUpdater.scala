@@ -93,6 +93,7 @@ class MiningInfoUpdater extends Actor with ActorLogging {
                   != Global.miningInfo.generationSignature){
                   Global.miningInfo = temp
                   Global.deadlineSubmitter ! resetBestDeadline()
+                  Global.poolStatistics.resetCurrentStatistics()
                   self ! getLastBlock()
                 }
               }

@@ -70,6 +70,7 @@ class PaymentLedger extends Actor with ActorLogging {
             () => Global.poolDB.updatePayment(payment))
         }
       }
+      Global.poolStatistics.incrementNQTEarned(nqt)
     }
     case payPendingPayment(id: Long, nqt: Long) => {
       var payment = payments(id)

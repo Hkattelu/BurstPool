@@ -35,7 +35,7 @@ with DatabaseInit {
 
   override def beforeAll(){
     super.beforeAll()
-    Config.init()
+    if(!Config.init()) return
     configureDb(true)
     Global.burstPriceChecker = 
       system.actorOf(Props[BurstPriceChecker], name = "BurstPriceChecker")

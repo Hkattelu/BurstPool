@@ -85,6 +85,7 @@ class UserManager extends Actor with ActorLogging {
         activeUsers += (accountId->newUser)
         //Global.poolStatistics.addActiveTB(newUser.reported_TB)
         Global.poolStatistics.incrementActiveUsers()
+        Global.poolStatistics.addMiner(miner_type)
         Global.dbWriter ! writeFunction(
           () => Global.poolDB.addUser(newUser))
         userToReturn = Some(newUser)
