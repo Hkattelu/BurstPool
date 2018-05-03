@@ -32,7 +32,7 @@ class StateUpdater(isTest: Boolean) extends Actor with ActorLogging {
         0 seconds, 10 seconds, Global.miningInfoUpdater, getNewMiningInfo())
     context.system.scheduler.schedule(
       Config.PAY_TIME hours, Config.PAY_TIME hours, 
-      Global.rewardPayout, PayoutRewards())
+      Global.rewardPayout, payoutRewards())
   }
 
   def receive() = {

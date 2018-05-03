@@ -250,7 +250,7 @@ with DatabaseInit {
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->quarter) // Quarter share is not enough 
     Global.rewardAccumulator ! addRewards(1, current, historic)
-    Global.rewardPayout ! PayoutRewards()
+    Global.rewardPayout ! payoutRewards()
     Thread.sleep(1000)
     val future = (Global.rewardAccumulator ? getUnpaidRewards())
       .mapTo[Map[Long, List[Reward]]]
@@ -273,7 +273,7 @@ with DatabaseInit {
     for(i <- 2 to 5) historic += (i.toLong->quarter) 
     current += (0.toLong->one) // 0 causes tx to not be broadcast
     Global.rewardAccumulator ! addRewards(2, current, historic)
-    Global.rewardPayout ! PayoutRewards()
+    Global.rewardPayout ! payoutRewards()
     Thread.sleep(1000)
     val future = (Global.rewardAccumulator ? getUnpaidRewards())
       .mapTo[Map[Long, List[Reward]]]
@@ -296,7 +296,7 @@ with DatabaseInit {
     var historic = Map[Long, BigDecimal]()
     current += (1.toLong->one)
     Global.rewardAccumulator ! addRewards(4, current, historic)
-    Global.rewardPayout ! PayoutRewards()
+    Global.rewardPayout ! payoutRewards()
     Thread.sleep(1000)
     val future = (Global.rewardAccumulator ? getUnpaidRewards())
       .mapTo[Map[Long, List[Reward]]]
@@ -362,6 +362,47 @@ with DatabaseInit {
       val shares = Await.result(future, timeout.duration)
       shares.keys should contain (new BigInteger(accId).longValue)
     }
+  }
+
+  test("Payment Ledger stores correct pending payments"){
+    Global.rewardAccumulator ! clearUnpaidRewards()
+    Global.paymentLedger ! clearPayments()
+    var current = Map[Long, BigDecimal]()
+    var historic = Map[Long, BigDecimal]()
+    current += (1.toLong->one) 
+    Global.rewardAccumulator ! addRewards(2, current, historic)
+    Thread.sleep(100)
+    val paymentFuture = (Global.paymentLedger ? getPayments())
+      .mapTo[Map[Long, PoolPayment]]
+    val payments = Await.result(paymentFuture, timeout.duration)
+    val payment = payments(1)
+    var amount: Long = (2 * Global.burstToNQT * BigDecimal.valueOf(
+      Config.CURRENT_BLOCK_SHARE) * BigDecimal.valueOf(1 - Config.POOL_FEE))
+      .longValue()
+    payment.pendingNQT should equal (amount)
+    payment.paidNQT should equal (0L)
+  }
+
+  test("Payment Ledger updates pending payments after payout"){
+    Global.rewardPayout ! Global.setSubmitURI(testNodeURL)
+    Global.rewardAccumulator ! clearUnpaidRewards()
+    Global.paymentLedger ! clearPayments()
+
+    var current = Map[Long, BigDecimal]()
+    var historic = Map[Long, BigDecimal]()
+    current += (1.toLong->one) 
+    Global.rewardAccumulator ! addRewards(4, current, historic)
+    Global.rewardPayout ! payoutRewards()
+    Thread.sleep(2500)
+    val paymentFuture = (Global.paymentLedger ? getPayments())
+      .mapTo[Map[Long, PoolPayment]]
+    val payments = Await.result(paymentFuture, timeout.duration)
+    val payment = payments(1)
+    var amount: Long = (4 * Global.burstToNQT * BigDecimal.valueOf(
+      Config.CURRENT_BLOCK_SHARE) * BigDecimal.valueOf(1 - Config.POOL_FEE))
+      .longValue() - Global.burstToNQT
+    payment.pendingNQT should equal (0L)
+    payment.paidNQT should equal (amount)
   }
 
   override def afterAll() {

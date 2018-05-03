@@ -22,7 +22,7 @@ import java.math.BigInteger
 case class BlockResponse(blockReward: String, totalFeeNQT: String, 
   block: String)
 case class TransactionResponse(transaction: String, broadcast: Boolean)
-case class PayoutRewards()
+case class payoutRewards()
 
 class RewardPayout extends Actor with ActorLogging {
 
@@ -37,7 +37,7 @@ class RewardPayout extends Actor with ActorLogging {
   var baseURI = Uri(Config.NODE_ADDRESS + "/burst")
 
   def receive() = {
-    case PayoutRewards() => {
+    case payoutRewards() => {
       var unpaidRewards: Map[Long, List[Reward]] = Map[Long, List[Reward]]()
       var blockToNQT: TrieMap[Long, Long] = TrieMap[Long, Long]()
 
@@ -104,10 +104,9 @@ class RewardPayout extends Actor with ActorLogging {
                           if(tx.broadcast){
                             log.info("Tx " + tx.transaction + " broadcasted!")
                             val rewardsList = sentRewards.toList
-                            for(reward <- rewardsList)
-                              reward.isPaid = true
+                            for(reward <- rewardsList)reward.isPaid = true
                             Global.paymentLedger ! payPendingPayment(id, 
-                                userToNQTAmount(id))
+                              userToNQTAmount(id))
                             Global.dbWriter ! writeFunction(
                               () => Global.poolDB.markRewardsAsPaid(
                                 rewardsList))
@@ -115,7 +114,7 @@ class RewardPayout extends Actor with ActorLogging {
                               rewardsList)
                           } else {
                             log.error(
-                              "Tx "+tx.transaction+" was not broadcasted")
+                              "Tx " + tx.transaction + " was not broadcasted")
                           }
                         } else {
                           val e = parse(data).extract[Global.ErrorMessage]

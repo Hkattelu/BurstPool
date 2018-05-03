@@ -15,6 +15,8 @@ import java.math.BigInteger
 case class addPendingRewards(rewards: List[Reward])
 case class addPendingPayment(id: Long, nqt: Long)
 case class payPendingPayment(id: Long, nqt: Long)
+case class clearPayments()
+case class getPayments()
 
 class PaymentLedger extends Actor with ActorLogging {
 
@@ -22,7 +24,6 @@ class PaymentLedger extends Actor with ActorLogging {
   final implicit val timeout: Timeout = 5 seconds
   var payments: TrieMap[Long, PoolPayment] =
     TrieMap[Long, PoolPayment]()
-  val burstToNQT = 100000000L
 
   override def preStart() {
     payments = Global.poolDB.loadPoolPayments()
@@ -37,15 +38,12 @@ class PaymentLedger extends Actor with ActorLogging {
       blockToNQTMapFuture onComplete {
         case Success(blockToNQTMap) => {
           for (reward <- rewards) {
-            var amount: Long = 0 - Global.burstToNQT
-            val rewardPercent =
+            val rewardPercent = 
               (reward.currentPercent * Config.CURRENT_BLOCK_SHARE) +
               (reward.historicalPercent * Config.HISTORIC_BLOCK_SHARE)
-            amount += (rewardPercent * BigDecimal.valueOf(
+            var amount: Long = (rewardPercent * BigDecimal.valueOf(
               blockToNQTMap(reward.blockId))).longValue()
-            if (amount > 0)
-              self ! addPendingPayment(reward.userId, 
-                blockToNQTMap(reward.blockId))
+            self ! addPendingPayment(reward.userId, amount)
           }
         }
         case Failure(error) => 
@@ -73,11 +71,13 @@ class PaymentLedger extends Actor with ActorLogging {
     }
     case payPendingPayment(id: Long, nqt: Long) => {
       var payment = payments(id)
-      payment.pendingNQT -= nqt
+      payment.pendingNQT -= (nqt + Global.burstToNQT) // TX fee
       payment.paidNQT += nqt
       payments(id) = payment
       Global.dbWriter ! writeFunction(
         () => Global.poolDB.updatePayment(payment))
     }
+    case clearPayments() => payments.clear()
+    case getPayments() => sender ! payments.toMap
   }
 }
