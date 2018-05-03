@@ -83,6 +83,11 @@ class PaymentLedger extends Actor with ActorLogging {
     case clearPayments() => payments.clear()
     case getPaymentsMap() => sender ! payments.toMap
     case getPayments() => sender ! payments.values
-    case getUserPayment(id: Long) => sender ! payments(id)
+    case getUserPayment(id: Long) => {
+      payments contains id match {
+        case true => sender ! payments(id) 
+        case false => sender ! payments.values
+      }
+    }
   }
 }

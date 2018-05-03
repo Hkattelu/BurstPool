@@ -9,18 +9,17 @@ import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import org.scalatra._
-import org.json4s.JsonDSL._
-import org.json4s._
-import org.scalatra.atmosphere._
-import org.scalatra.json.{JValueResult, JacksonJsonSupport}
+import org.scalatra.json._
+
+import org.json4s.{DefaultFormats, Formats}
 import java.math.BigInteger
 
-class InterfactUpdateServlet(system: ActorSystem) extends ScalatraServlet 
-with JacksonJsonSupport with SessionSupport with AtmosphereSupport {
+class InterfaceUpdateServlet(system: ActorSystem) extends ScalatraServlet 
+with JacksonJsonSupport {
 
+  protected implicit def executor: ExecutionContext = system.dispatcher
   protected implicit lazy val jsonFormats: Formats =
    DefaultFormats.withBigDecimal
-  override implicit protected def scalatraActorSystem = system
   protected val duration = 5 seconds
 
   before() {

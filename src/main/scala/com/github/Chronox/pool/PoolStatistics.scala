@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import scala.collection.concurrent.TrieMap
 
 case class statistics(validNonces: Int, badNonces: Int, bannedAddresses: Int,
-  activeUsers: Int, totalUsers: Int, NQTEarned: Long,
-  minerCounts: Map[String, Int], serverUptime: Long, lastSubmitTime: Timestamp)
+  activeUsers: Int, totalUsers: Int, NQTEarned: Long, lastSubmitTime: Timestamp,
+  minerCounts: Map[String, Int], serverUptime: Long)
 
 object PoolStatistics {
   val serverStartTime: Long = Timestamp.valueOf(LocalDateTime.now).getTime
@@ -67,11 +67,11 @@ object PoolStatistics {
     }
   }
 
-  def get() {
-    statistics(validNonces = numValidNonces.get, badNonces = numBadNonces.get,
-      bannedAddresses = numBannedAddresses.get, lastSubmitTime = lastSubmitTime,
-      activeUsers = numActiveUsers.get, serverUptime = getServerUptime(),
-      totalUsers = numTotalUsers.get, NQTEarned = NQTEarned.get, 
-      minerCounts = minerCounts.toMap)
+  def get(): statistics = {
+    return statistics(validNonces = numValidNonces.get, 
+      badNonces = numBadNonces.get, bannedAddresses = numBannedAddresses.get, 
+      lastSubmitTime = lastSubmitTime, activeUsers = numActiveUsers.get, 
+      serverUptime = getServerUptime(), totalUsers = numTotalUsers.get, 
+      NQTEarned = NQTEarned.get, minerCounts = minerCounts.toMap)
   }
 }
