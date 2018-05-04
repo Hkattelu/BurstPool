@@ -32,7 +32,7 @@ function drawPie(percentMap, elementId) {
     .attr('height', plotHeight)
     .append('g')
     .attr('transform', 'translate(' + (plotWidth / 2) + 
-      ',' + (plotHeight / 2) + 20')');
+      ',' + (plotHeight / 2) + 20 + ')');
 
   var arc = d3.arc().innerRadius(0).outerRadius(radius);
 
@@ -83,6 +83,12 @@ angular.module('burstPool', []).controller(
     }).catch(function(err){console.log(err)})
   };
 
+  $scope.getPoolInfo = function () {
+    $http.get("/burst", {params:{"requestType":"getPoolInfo"}}).
+    then(function(response) {$parse("poolInfo").assign($scope, response.data)
+    }).catch(function(err){console.log(err)})
+  };
+
   $scope.updateMiningInfo = function () {
     $http.get("/burst", {params:{"requestType":"getMiningInfo"}}).
     then(function(response) {$parse("miningInfo").assign($scope, response.data)
@@ -119,6 +125,7 @@ angular.module('burstPool', []).controller(
   $scope.updateStatistics();
   $scope.updateCurrentShares();
   $scope.updateHistoricShares();
+  $scope.getPoolInfo();
 
   setInterval($scope.updatePrice, 5000); // Every 5 seconds
   setInterval($scope.updateMiningInfo, 5000); // Every 5 seconds

@@ -37,6 +37,7 @@ with DatabaseSessionSupport {
         case "submitNonce" => "Submitting nonces only takes POST requests"
         case "getMiningInfo" => Global.miningInfo
         case "getBlock" => Global.lastBlockInfo
+        case "getPoolInfo" => Global.poolInfo
         case "sendMoney" => "Money cannot be sent through this pool"
         case _ => {
           response.setStatus(400)

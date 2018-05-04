@@ -145,31 +145,33 @@
             </li>
             <li>
               To mine here you need to set your "reward recipient" to
-              BURST-SPAC-EWWF-CRX2-78Z6Z. This costs 1 BURST and you need to 
-              wait 4 blocks before it takes effect
+              {{poolInfo.rewardRecipient}}. This costs 1 BURST and you need to 
+              wait 4 blocks before it takes effect. Attempting to submit bad
+              nonces to the network or submitting nonces without the proper
+              reward recipient will result in a temporary network ban of
+              {{poolInfo.banTime}} minutes.
             </li>
             <li>
               Transaction fees are included in the rewards shared to miners.
-              When the pool wins a block, 2% is deducted from the block reward 
-              for pool usage fees. Of the remaining reward, 30% is shared over
-              miners who submitted nonces for the current block. For the 
-              current block,a miner's share of the reward is inversely
-              proportional to the deadline. The other 70% is shared over
-              miners who submitted nonces for the previous 500 blocks. These
-              "historic" shares are simply the average of "current" shares over
-              the previous 500 blocks.
+              When the pool wins a block, {{poolInfo.poolFee}}% is deducted from
+              the block reward for pool usage fees. Of the remaining reward, 
+              {{poolInfo.currentShare}}% is shared over miners who submitted 
+              nonces for the current block. For the current block, a miner's 
+              share of the reward is inversely proportional to the deadline. The
+              other {{poolInfo.historicShare}}% is shared over miners who 
+              submitted nonces for the previous {{poolInfo.historicBlocks}} 
+              blocks. These "historic" shares are simply the average of 
+              "current" shares over the previous {{poolInfo.historicBlocks}} 
+              blocks.
             </li>
             <li>
-              Miner payouts are calculated after a minimum of 10 blocks after 
-              the pool wins that block. Miner payouts are Deferred until their
-              total pending payout is at least 250 BURST, or the earliest
-              pending payout is over 2520 blocks old. Queued payouts are waiting
-              to be sent to the BURST network. Unconfirmed payouts have been
-              sent to the BURST network but haven't had 10 confirmations yet.
-              Confirmed payouts are listed as Paid. If there are no unconfirmed
-              payouts, and no blocks won by the pool which haven't been shared
-              out yet, then the balance, minus deferred payouts, is swept into
-              the pool's fee account.
+              Miner payouts are calculated every {{poolInfo.paymentTime}} days.
+              to be sent to the BURST network. Pending payouts mean that the
+              transaction will occur at the next pay step. If there is not
+              enough pending payment to cover the transaction fee, the
+              transaction will saved until the next pay period. Confirmed 
+              payouts are listed as Paid. The remaining BURST in the pool's 
+              account is periodically sent to the pool's fee acount.
             </li>
           </ul>
           <h4 class="center_align">

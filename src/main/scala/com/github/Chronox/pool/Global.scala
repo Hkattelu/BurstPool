@@ -29,6 +29,9 @@ object Global {
   case class LastBlockInfo(generationSignature:String, block: String,
     totalFeeNQT: String, generator: String, generatorRS: String, nonce: String,
     timestamp: String, baseTarget: String, height: String, blockReward: String)
+  case class PoolInfo(rewardRecipient: String, poolFee: Double, 
+    currentShare: Double, historicShare: Double, historicBlocks: Int,
+    paymentTime: Int, banTime: Int)
   case class ErrorMessage(errorCode: String, errorDescription: String)
   case class setSubmitURI(uri: String)
 
@@ -38,8 +41,9 @@ object Global {
   var lastBlockInfo: LastBlockInfo = LastBlockInfo(null, null, null, null, 
     null, null, null, null, null, null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
+  var poolInfo: PoolInfo = PoolInfo(null, 0.0, 0.0, 0.0, 0, 0, 0)
 
-  def toUnsignedLong(num: Long): BigInteger = {
-    return (BigInteger(num >>> 1) << 1) + (num & 1)
+  def toUnsignedLong(num: Long): BigInt = {
+    return (BigInt(num >>> 1) << 1) + (num & 1)
   }
 }

@@ -120,6 +120,29 @@ with DatabaseInit {
     }
   }
 
+  test("Getting Last Block Info"){
+    get("/burst", Map("requestType" -> "getBlock")){
+      status should equal (200)
+      body should include ("generationSignature")
+      body should include ("generator")
+      body should include ("blockReward")
+      body should include ("timestamp")
+      body should include ("height")
+    }
+  }
+
+  test("Getting Pool Info"){
+    get("/burst", Map("requestType" -> "getPoolInfo")){
+      status should equal (200)
+      body should include ("rewardRecipient")
+      body should include ("poolFee")
+      body should include ("currentShare")
+      body should include ("historicShare")
+      body should include ("paymentTime")
+      body should include ("banTime")
+    }
+  }
+
   test("Fail if submitting nonce without all parameters"){
     post("/burst", Map("requestType" -> "submitNonce")){
       status should equal(400)
@@ -342,6 +365,7 @@ with DatabaseInit {
       "54752", "478972")
     post("/burst", Map("requestType"->"submitNonce", "accountId"->accId, 
       "nonce"->nonce)) {
+      println(body)
       body should include ("did not match calculated deadline")
       status should equal (500)
     }

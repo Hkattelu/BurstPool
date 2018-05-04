@@ -103,8 +103,11 @@ table, th, td {
 }
 
 .modal-content {
-  color: black;
   border: 1px solid blue;
+}
+
+.modal-body, .modal-body button, .modal-body li, .modal-body input {
+  color: black;
 }
 
 .modal-dialog {

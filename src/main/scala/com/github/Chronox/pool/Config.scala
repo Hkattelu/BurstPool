@@ -47,7 +47,6 @@ object Config {
           elements.getOrElse("CURRENT_BLOCK_SHARE", "0.18").toDouble
         HISTORIC_BLOCK_SHARE = 
           elements.getOrElse("HISTORIC_BLOCK_SHARE", "0.80").toDouble
-        FEE_ADDRESS = elements.getOrElse("FEE_ADDRESS", "")
         BAN_TIME = elements.getOrElse("BAN_TIME", "3").toInt
         PAY_TIME = elements.getOrElse("PAY_TIME", "5").toInt
         ACCOUNT_ID = elements.getOrElse("ACCOUNT_ID", "")
@@ -61,6 +60,9 @@ object Config {
         DB_HOST = elements.getOrElse("DB_HOST", "localhost")
         DB_PORT = elements.getOrElse("DB_PORT", "3306")
         DB_NAME = elements.getOrElse("DB_NAME", "ChronoxPool")
+        Global.poolInfo = Global.PoolInfo(ACCOUNT_ID, 100*POOL_FEE, 
+          100*CURRENT_BLOCK_SHARE, 100*HISTORIC_BLOCK_SHARE, MIN_HEIGHT_DIFF,
+          PAY_TIME, BAN_TIME)
         return true
       }
     }

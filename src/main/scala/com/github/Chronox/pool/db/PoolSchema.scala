@@ -166,7 +166,12 @@ object PoolSchema extends Schema {
   }
 
   def addBlock(block: Block) = {
-    transaction{blocks.insert(block)}
+    var tempBlock: Option[Block] = None
+    transaction{tempBlock = blocks.lookup(block.id)}
+    tempBlock match {
+      case Some(b: Block) => // Don't add block that already exists
+      case None => transaction{blocks.insert(block)}
+    }
   }
 
   def getBlock(id: Long): Option[Block] = {
