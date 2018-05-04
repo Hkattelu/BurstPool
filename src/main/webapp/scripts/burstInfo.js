@@ -65,6 +65,12 @@ function drawPie(percentMap, elementId) {
     });
 }
 
+function updateAccountID() {
+  accountId = document.getElementById('accountID').value
+  angular.element(document.getElementById('infoController'))
+    .scope().setMyPaymentUpdater(accountId)
+}
+
 angular.module('burstPool', []).controller(
   'InfoCtrl', function ($http, $scope, $location, $parse) {
 
@@ -119,18 +125,43 @@ angular.module('burstPool', []).controller(
     }).catch(function(err){console.log(err)})
   };
 
+  $scope.updatePayments = function () {
+    $http.get("/pool/payments").then(function(response) {
+      $parse("payments").assign($scope, response.data)
+    }).catch(function(err){console.log(err)})
+  };
+
+  $scope.updateMyPayment = function (myId) {
+    $http.get("/pool/payments/"+myId).then(function(response) {
+      $scope.pending_burst = response.data.pendingNQT/100000000
+      $scope.earned_burst = response.data.paidNQT/100000000
+    }).catch(function(err){console.log(err)})
+  }
+
+  $scope.setMyPaymentUpdater = function (myId) {
+    $scope.updateMyPayment = function () {
+      $http.get("/pool/payments/"+myId).then(function(response) {
+        $scope.pending_burst = response.data.pendingNQT/100000000
+        $scope.earned_burst = response.data.paidNQT/100000000
+      }).catch(function(err){console.log(err)})
+    }
+    setInterval($scope.updateMyPayment, 60000) // Every 60 seconds
+  }
+
   $scope.updatePrice();
   $scope.updateMiningInfo();
   $scope.updateLastBlockInfo();
   $scope.updateStatistics();
   $scope.updateCurrentShares();
   $scope.updateHistoricShares();
+  $scope.updatePayments()
   $scope.getPoolInfo();
 
   setInterval($scope.updatePrice, 5000); // Every 5 seconds
   setInterval($scope.updateMiningInfo, 5000); // Every 5 seconds
   setInterval($scope.updateLastBlockInfo, 5000); // Every 5 seconds
+  setInterval($scope.updateStatistics, 30000); // Every 30 seconds
   setInterval($scope.updateCurrentShares, 10000); // Every 10 seconds
   setInterval($scope.updateHistoricShares, 10000); // Every 10 seconds
-  setInterval($scope.updateStatistics, 30000); // Every 30 seconds
+  setInterval($scope.updatePayments, 60000); // Every 60 seconds
 });

@@ -1,5 +1,5 @@
 * , a:link, a:visited {
-  color: white;
+  color: black;
 }
 
 body {
@@ -23,7 +23,7 @@ body {
   margin-bottom: 2vh;
   text-align: center;
   text-overflow: ellipsis;
-  background-color: rgba(256, 256, 256, 0.4);
+  background-color: rgba(256, 256, 256, 1);
   z-index: 1;
 }
 

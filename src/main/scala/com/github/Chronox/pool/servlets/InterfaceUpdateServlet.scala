@@ -35,15 +35,15 @@ with JacksonJsonSupport {
   }
 
   get("/payments") {
-    if (params contains "account") {
-      val id = new BigInteger(params("account")).longValue()
-      new AsyncResult() {
-        val is = (Global.paymentLedger ? getUserPayment(id))(duration)
-      }
-    } else {
-      new AsyncResult() {
-        val is = (Global.paymentLedger ? getPayments())(duration)
-      }
+    new AsyncResult() {
+      val is = (Global.paymentLedger ? getPayments())(duration)
+    }  
+  }
+
+  get("/payments/:id") {
+    val id = new BigInteger(params("id")).longValue()
+    new AsyncResult() {
+      val is = (Global.paymentLedger ? getUserPayment(id))(duration)
     }
   }
 

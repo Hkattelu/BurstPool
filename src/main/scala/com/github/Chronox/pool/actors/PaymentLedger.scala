@@ -86,7 +86,7 @@ class PaymentLedger extends Actor with ActorLogging {
     case getUserPayment(id: Long) => {
       payments contains id match {
         case true => sender ! payments(id) 
-        case false => sender ! payments.values
+        case false => sender ! new PoolPayment(0, None, 0, 0)
       }
     }
   }

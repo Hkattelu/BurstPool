@@ -1,1 +1,12 @@
-3
+<table>
+  <tr>
+    <th>User ID</th>
+    <th>Pending NQT</th>
+    <th>Paid NQT</th>
+  </tr>
+  <tr ng-repeat="payment in payments">
+    <td>{{payment.id}}</td>
+    <td>{{payment.pendingNQT}}</td>
+    <td>{{payment.paidNQT}}</td>
+  </tr>
+</table>

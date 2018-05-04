@@ -1,7 +1,7 @@
 var burstPool= angular.module("burstPool", ["ngRoute"]);
 burstPool.config(function($routeProvider) {
     $routeProvider
-    .when("/", {
+    .when("/poolUsers", {
         templateUrl : "poolUsers.html"
     })
     .when("/burstEarned", {

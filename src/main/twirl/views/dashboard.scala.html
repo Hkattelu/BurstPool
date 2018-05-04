@@ -117,7 +117,7 @@
     <div class="col-md-2 col-sm-4 col-xs-12">
       <div class="info-container medium" id="graph-selector">
         <ul>
-          <li><a href="#!">Pool Active users</a></li>
+          <li><a href="#!poolUsers">Pool Active users</a></li>
           <li><a href="#!burstEarned">BURST earned</a></li>
           <li><a href="#!poolMemory">Reported Pool Memory</a></li>
           <li><a href="#!poolEarned">Pool BURST earned</a></li>
@@ -175,11 +175,11 @@
             </li>
           </ul>
           <h4 class="center_align">
-            Enter your BURST nickname/address to view information
+            Enter your BURST Account ID to view your payment information
           </h4>
           <div class="center_align">
-            <form novalidate>
-              <input type="text" placeholder="BURST address/nickname"/>
+            <form novalidate onsubmit="updateAccountID()">
+              <input type="text" placeholder="BURST Account ID" id="accountID"/>
             </form>
             <button href="#" data-dismiss="modal">Close</button>
             <button href="#">Submit</button>
