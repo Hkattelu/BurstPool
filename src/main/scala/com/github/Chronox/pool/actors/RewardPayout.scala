@@ -89,8 +89,8 @@ class RewardPayout extends Actor with ActorLogging {
                   val ent = FormData(Map("requestType"->"sendMoney", 
                     "deadline"->"1440", "feeNQT"->Global.burstToNQT.toString, 
                     "secretPhrase"->Config.SECRET_PHRASE, 
-                    "recipient"->id.toString, "amountNQT"->amount.toString))
-                    .toEntity
+                    "recipient"->Global.toUnsignedLong(id).toString, 
+                    "amountNQT"->amount.toString)).toEntity
                   http.singleRequest(HttpRequest(method = POST, uri = baseURI, 
                     entity = ent)
                   ) onComplete {

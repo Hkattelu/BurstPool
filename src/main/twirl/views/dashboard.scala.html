@@ -94,10 +94,10 @@
         </table>
         <br>
         <span>1 <img src="images/burstcoin.png" alt="BURST"/>
-         = $2 <img src="images/dollar.png" alt="USD"/></span>
+         = ${{price_usd}} <img src="images/dollar.png" alt="USD"/></span>
         <br>
         <span>1 <img src="images/burstcoin.png" alt="BURST"/>
-         = 2 <img src="images/bitcoin.png" alt="BTC"/></span>
+         = {{price_btc}} <img src="images/bitcoin.png" alt="BTC"/></span>
       </div>
     </div>
     <div class="col-md-4 col-sm-4 col-xs-12">
@@ -139,7 +139,9 @@
           <ul>
             <li>
               Miners should submit nonces to port 8124. This pool also
-              supports the getMiningInfo API call on the same port.
+              supports the getMiningInfo and getBlock API call on the same port.
+              The pool also supports a getPoolInfo API call to get information
+              on the pool's account ID and share amounts
             </li>
             <li>
               To mine here you need to set your "reward recipient" to
@@ -149,10 +151,10 @@
             <li>
               Transaction fees are included in the rewards shared to miners.
               When the pool wins a block, 2% is deducted from the block reward 
-              for pool usage fees. Of the remaining reward, 60% is shared over
+              for pool usage fees. Of the remaining reward, 30% is shared over
               miners who submitted nonces for the current block. For the 
-              current block,a miner's share of the (60%) reward is inversely
-              proportional to (deadline + 1)1.2. The other 40% is shared over
+              current block,a miner's share of the reward is inversely
+              proportional to the deadline. The other 70% is shared over
               miners who submitted nonces for the previous 500 blocks. These
               "historic" shares are simply the average of "current" shares over
               the previous 500 blocks.

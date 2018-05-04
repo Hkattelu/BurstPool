@@ -74,6 +74,7 @@ with DatabaseSessionSupport {
         }
         case "getMiningInfo" => "Getting mining info only takes GET requests"
         case "getBlock" => "Getting last Block only takes GET requests"
+        case "getPoolInfo" => "Getting pool info only takes GET requests"
         case "sendMoney" => "Money cannot be sent through this pool"
         case _ => {
           response.setStatus(400)

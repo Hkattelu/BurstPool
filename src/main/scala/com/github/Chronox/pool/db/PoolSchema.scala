@@ -19,13 +19,8 @@ object PoolSchema extends Schema {
   val shares = table[Share]
   val payments = table[PoolPayment]
 
-  on(users)(u => declare(
-    u.id is (indexed),
-    u.lastSubmitHeight is (indexed),
-    columns(u.id, u.nickName) are (unique)))
-  on(blocks)(b => declare(
-    b.id is (primaryKey), // necessary to turn off auto-incrementing
-    b.height is (unique)))
+  on(users)(u => declare(u.id is (indexed)))
+  on(blocks)(b => declare(b.id is (primaryKey))) // Turn off auto-incrementing
   on(rewards)(r => declare(columns(r.userId, r.blockId) are (indexed)))
   on(shares)(s => declare(columns(s.blockId, s.userId) are (indexed)))
 

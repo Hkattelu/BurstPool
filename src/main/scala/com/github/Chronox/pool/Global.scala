@@ -38,4 +38,8 @@ object Global {
   var lastBlockInfo: LastBlockInfo = LastBlockInfo(null, null, null, null, 
     null, null, null, null, null, null)
   var burstPriceInfo : BurstPriceInfo = BurstPriceInfo("Not found", "Not found")
+
+  def toUnsignedLong(num: Long): BigInteger = {
+    return (BigInteger(num >>> 1) << 1) + (num & 1)
+  }
 }
