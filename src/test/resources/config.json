@@ -1,0 +1,19 @@
+{
+  "NODE_ADDRESS" : "https://wallet1.burstnation.com:8125",
+  "PRICE_ADDRESS" : "https://api.coinmarketcap.com/v1/ticker/burst/",
+  "POOL_FEE" : "0.02",
+  "CURRENT_BLOCK_SHARE" : "0.80",
+  "HISTORIC_BLOCK_SHARE" : "0.20",
+  "BAN_TIME" :  "60",
+  "PAY_TIME" : "5",
+  "ACCOUNT_ID" : "6887101586189604106",
+  "SECRET_PHRASE" : "help",
+  "MIN_HEIGHT_DIFF" :  "5",
+  "POOL_STRATEGY" : "STANDARD",
+  "TARGET_DEADLINE" : "2592000",
+  "DB_USER" : "root",
+  "DB_PASS" : "",
+  "DB_HOST" : "localhost",
+  "DB_PORT" : "3306",
+  "DB_NAME" : "testpool"
+}

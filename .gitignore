@@ -46,7 +46,3 @@ jrebel.lic
 *.iws
 .*.sw?
 .idea
-
-# configurations
-src/main/resources/config.json
-src/test/resources/config.json
